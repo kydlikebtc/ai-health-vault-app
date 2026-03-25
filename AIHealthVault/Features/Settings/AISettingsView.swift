@@ -26,6 +26,7 @@ struct AISettingsView: View {
                         HStack {
                             Image(systemName: "checkmark.seal.fill")
                                 .foregroundStyle(.green)
+                                .accessibilityHidden(true)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("API Key 已配置")
                                     .font(.subheadline)

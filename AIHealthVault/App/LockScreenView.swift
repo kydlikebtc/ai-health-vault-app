@@ -12,6 +12,7 @@ struct LockScreenView: View {
                 .font(.system(size: 72))
                 .foregroundStyle(.red)
                 .symbolEffect(.pulse)
+                .accessibilityHidden(true)
 
             VStack(spacing: 8) {
                 Text("AI Health Vault")

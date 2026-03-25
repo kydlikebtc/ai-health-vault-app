@@ -250,6 +250,7 @@ struct AddEditWearableView: View {
                         ForEach(WearableMetricType.allCases, id: \.self) { type in
                             HStack {
                                 Image(systemName: type.icon)
+                                    .accessibilityHidden(true)
                                 Text(type.displayName)
                             }
                             .tag(type)
@@ -467,6 +468,7 @@ private struct SummaryMetricCell: View {
             Image(systemName: icon)
                 .font(.title3)
                 .foregroundStyle(color)
+                .accessibilityHidden(true)
             Text(value)
                 .font(.subheadline.monospacedDigit().bold())
             Text("\(label)·\(unit)")
@@ -479,6 +481,8 @@ private struct SummaryMetricCell: View {
         .padding(.vertical, 8)
         .background(color.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: 8))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(label)：\(value) \(unit)")
     }
 }
 
