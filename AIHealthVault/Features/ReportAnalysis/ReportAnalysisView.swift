@@ -76,6 +76,7 @@ struct ReportAnalysisView: View {
                 }
             }
         }
+        .animation(.easeInOut(duration: 0.3), value: viewModel.currentStep)
         .padding(.horizontal)
         .padding(.vertical, 8)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
