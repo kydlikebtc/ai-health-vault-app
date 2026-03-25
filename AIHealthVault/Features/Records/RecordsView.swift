@@ -157,6 +157,7 @@ struct RecordCategoryRow: View {
                 .background(color.opacity(0.15))
                 .foregroundStyle(color)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
+                .accessibilityHidden(true)
 
             Text(title)
                 .font(.body)
@@ -166,6 +167,7 @@ struct RecordCategoryRow: View {
             Text("\(count)")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .accessibilityLabel("\(count)条记录")
         }
     }
 }

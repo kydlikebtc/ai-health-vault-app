@@ -232,6 +232,7 @@ struct RecordCategoryCard: View {
                     .foregroundStyle(color)
                     .frame(width: 44, height: 44)
                     .background(color.opacity(0.12), in: Circle())
+                    .accessibilityHidden(true)
 
                 Text(title)
                     .font(.subheadline.weight(.medium))
