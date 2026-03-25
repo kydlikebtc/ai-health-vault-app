@@ -5,6 +5,7 @@ import SwiftData
 struct RecordsView: View {
     @Query(sort: \Member.name) private var members: [Member]
     @State private var selectedMember: Member?
+    @State private var showingSearch = false
 
     var body: some View {
         Group {
@@ -22,8 +23,21 @@ struct RecordsView: View {
         .toolbar {
             if !members.isEmpty {
                 ToolbarItem(placement: .primaryAction) {
-                    memberPicker
+                    HStack(spacing: 4) {
+                        Button {
+                            showingSearch = true
+                        } label: {
+                            Image(systemName: "magnifyingglass")
+                        }
+                        .accessibilityLabel("搜索健康记录")
+                        memberPicker
+                    }
                 }
+            }
+        }
+        .sheet(isPresented: $showingSearch) {
+            if let member = selectedMember {
+                GlobalSearchView(member: member)
             }
         }
         .onAppear {
