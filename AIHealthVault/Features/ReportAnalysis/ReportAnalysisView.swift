@@ -103,6 +103,7 @@ struct ReportAnalysisView: View {
                                     .foregroundStyle(.white)
                                     .background(Color.black.opacity(0.5), in: Circle())
                             }
+                            .accessibilityLabel("清除图片")
                             .padding(8)
                         }
                     }
@@ -112,6 +113,7 @@ struct ReportAnalysisView: View {
                     Image(systemName: "doc.text.magnifyingglass")
                         .font(.system(size: 48))
                         .foregroundStyle(.blue.opacity(0.7))
+                        .accessibilityHidden(true)
 
                     Text("拍照或选择体检报告图片")
                         .font(.headline)
@@ -182,6 +184,7 @@ struct ReportAnalysisView: View {
             HStack {
                 Image(systemName: "text.viewfinder")
                     .foregroundStyle(.orange)
+                    .accessibilityHidden(true)
                 Text("识别到的文字")
                     .font(.headline)
                 Spacer()
@@ -237,6 +240,7 @@ struct ReportAnalysisView: View {
             HStack(spacing: 8) {
                 Image(systemName: "brain.head.profile")
                     .foregroundStyle(.purple)
+                    .accessibilityHidden(true)
                 Text("AI 解读")
                     .font(.headline)
                 Spacer()
@@ -247,6 +251,7 @@ struct ReportAnalysisView: View {
                 if case .done = viewModel.phase {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
+                        .accessibilityLabel("解读完成")
                 }
             }
 
@@ -265,6 +270,7 @@ struct ReportAnalysisView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "exclamationmark.circle.fill")
                         .foregroundStyle(.red)
+                        .accessibilityHidden(true)
                     Text(msg)
                         .font(.caption)
                         .foregroundStyle(.red)
@@ -286,6 +292,7 @@ struct ReportAnalysisView: View {
         HStack(spacing: 10) {
             Image(systemName: "info.circle.fill")
                 .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
             Text("以上解读由 AI 生成，仅供参考，不构成医疗建议。如有异常指标，请及时咨询医生。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -617,6 +624,7 @@ struct ReportAnalysisFromReportView: View {
                     Image(systemName: "doc.text.magnifyingglass")
                         .font(.title2)
                         .foregroundStyle(.blue)
+                        .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(report.reportTitle.isEmpty ? "体检报告" : report.reportTitle)
                             .font(.headline)
@@ -632,12 +640,16 @@ struct ReportAnalysisFromReportView: View {
                 if !viewModel.analysisContent.isEmpty || viewModel.showsAnalysis {
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
-                            Image(systemName: "brain.head.profile").foregroundStyle(.purple)
+                            Image(systemName: "brain.head.profile")
+                                .foregroundStyle(.purple)
+                                .accessibilityHidden(true)
                             Text("AI 解读").font(.headline)
                             Spacer()
                             if case .analyzing = viewModel.phase { ProgressView().scaleEffect(0.8) }
                             if case .done = viewModel.phase {
-                                Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(.green)
+                                    .accessibilityLabel("解读完成")
                             }
                         }
                         if viewModel.analysisContent.isEmpty {
@@ -652,7 +664,9 @@ struct ReportAnalysisFromReportView: View {
 
                 if case .done = viewModel.phase {
                     HStack(spacing: 10) {
-                        Image(systemName: "info.circle.fill").foregroundStyle(.secondary)
+                        Image(systemName: "info.circle.fill")
+                            .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
                         Text("以上解读由 AI 生成，仅供参考，不构成医疗建议。")
                             .font(.caption).foregroundStyle(.secondary)
                     }

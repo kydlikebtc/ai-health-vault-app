@@ -86,6 +86,7 @@ struct HealthExportView: View {
                 Image(systemName: "info.circle")
                     .foregroundStyle(.secondary)
                     .padding(.top, 1)
+                    .accessibilityHidden(true)
                 Text("将为「\(member.name)」生成 PDF 健康档案，可通过 AirDrop、邮件、消息等方式分享。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -106,6 +107,7 @@ struct HealthExportView: View {
                     } else {
                         Image(systemName: "arrow.down.doc.fill")
                             .padding(.trailing, 4)
+                            .accessibilityHidden(true)
                         Text("生成 PDF 并分享")
                             .fontWeight(.semibold)
                     }
