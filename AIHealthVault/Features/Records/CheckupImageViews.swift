@@ -17,8 +17,13 @@ struct CheckupImageGallerySection: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
                         ForEach(report.attachmentPaths, id: \.self) { path in
-                            ThumbnailCell(imagePath: path)
-                                .onTapGesture { fullscreenPath = path }
+                            Button {
+                                fullscreenPath = path
+                            } label: {
+                                ThumbnailCell(imagePath: path)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("查看图片")
                         }
                     }
                 }
@@ -138,6 +143,7 @@ struct FullscreenImageViewer: View {
                     .shadow(radius: 4)
                     .padding()
             }
+            .accessibilityLabel("关闭")
         }
         .task {
             await loadImages()

@@ -124,6 +124,7 @@ struct MemberRowView: View {
                         Image(systemName: "exclamationmark.circle.fill")
                             .foregroundStyle(.orange)
                             .font(.caption)
+                            .accessibilityLabel("有慢性病记录")
                     }
                 }
 

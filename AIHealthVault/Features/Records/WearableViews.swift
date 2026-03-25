@@ -112,6 +112,7 @@ struct WearableListView: View {
                                 Image(systemName: "arrow.triangle.2.circlepath")
                             }
                         }
+                        .accessibilityLabel("从 HealthKit 同步数据")
                         .disabled(healthKitService.isSyncing)
                     }
                     Button { showingAdd = true } label: {
@@ -176,6 +177,7 @@ struct WearableRow: View {
                 .foregroundStyle(.green)
                 .frame(width: 36, height: 36)
                 .background(.green.opacity(0.12), in: Circle())
+                .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(entry.metricType.displayName)
@@ -396,6 +398,7 @@ struct TodayHealthSummaryCard: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
+                    .accessibilityLabel("刷新今日健康数据")
                 }
             }
             .padding(.horizontal)

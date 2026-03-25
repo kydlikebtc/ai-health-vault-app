@@ -61,6 +61,7 @@ struct AISettingsView: View {
                                         .foregroundStyle(.secondary)
                                 }
                                 .buttonStyle(.plain)
+                                .accessibilityLabel(isAPIKeyVisible ? "隐藏 API 密钥" : "显示 API 密钥")
                             }
 
                             if let result = validationResult {

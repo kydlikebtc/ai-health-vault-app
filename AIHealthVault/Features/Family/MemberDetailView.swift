@@ -28,6 +28,7 @@ struct MemberDetailView: View {
                     } label: {
                         Image(systemName: "square.and.arrow.up")
                     }
+                    .accessibilityLabel("导出健康报告")
                     Button("编辑") { showingEdit = true }
                 }
             }
@@ -253,6 +254,13 @@ struct RecordCategoryCard: View {
 
 // MARK: - 流式布局（Tag 排列）
 
+private struct FlowHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
 struct FlowLayout<Item: Hashable, Content: View>: View {
     let items: [Item]
     let content: (Item) -> Content
@@ -264,6 +272,7 @@ struct FlowLayout<Item: Hashable, Content: View>: View {
             self.generateContent(in: geo)
         }
         .frame(height: totalHeight)
+        .onPreferenceChange(FlowHeightKey.self) { totalHeight = $0 }
     }
 
     private func generateContent(in geometry: GeometryProxy) -> some View {
@@ -299,9 +308,7 @@ struct FlowLayout<Item: Hashable, Content: View>: View {
         }
         .background(
             GeometryReader { geo in
-                Color.clear.onAppear {
-                    totalHeight = geo.size.height
-                }
+                Color.clear.preference(key: FlowHeightKey.self, value: geo.size.height)
             }
         )
     }

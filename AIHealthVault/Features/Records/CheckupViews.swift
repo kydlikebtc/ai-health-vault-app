@@ -507,6 +507,7 @@ private struct ExistingImageThumb: View {
                     .foregroundStyle(.white, .red)
                     .font(.callout)
             }
+            .accessibilityLabel("删除图片")
             .offset(x: 6, y: -6)
         }
         .task {
@@ -542,6 +543,7 @@ private struct PendingImageThumb: View {
                     .foregroundStyle(.white, .red)
                     .font(.callout)
             }
+            .accessibilityLabel("删除图片")
             .offset(x: 6, y: -6)
         }
     }
