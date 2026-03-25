@@ -130,8 +130,7 @@ struct MemberRowView: View {
 
                 HStack(spacing: 8) {
                     if let age = member.age {
-                        Label("\(age)岁", systemImage: "")
-                            .labelStyle(.titleOnly)
+                        Text("\(age)岁")
                     }
                     Text(member.gender.displayName)
                     if member.bloodType != .unknown {

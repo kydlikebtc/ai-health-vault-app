@@ -137,7 +137,7 @@ struct DailyPlanCard: View {
         errorMessage = nil
 
         let aiService: any AIService = aiMgr.isAPIKeyConfigured && aiMgr.isAIEnabled
-            ? ClaudeService.shared
+            ? ClaudeService()
             : MockAIService.dailyPlanMock()
 
         do {

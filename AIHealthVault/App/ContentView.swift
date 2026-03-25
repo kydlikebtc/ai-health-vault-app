@@ -39,5 +39,6 @@ struct ContentView: View {
 #Preview {
     ContentView()
         .environmentObject(AuthenticationService())
+        .environmentObject(HealthKitService())
         .modelContainer(MockData.previewContainer)
 }

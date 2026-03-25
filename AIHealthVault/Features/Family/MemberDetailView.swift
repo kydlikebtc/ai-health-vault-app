@@ -249,6 +249,9 @@ struct RecordCategoryCard: View {
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title)，\(count) 条记录")
+        .accessibilityHint("双击进入")
     }
 }
 

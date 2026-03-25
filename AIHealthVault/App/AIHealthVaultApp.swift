@@ -75,6 +75,7 @@ struct AIHealthVaultApp: App {
 // MARK: - 通知 Delegate
 
 /// 处理前台通知展示及「已服用」操作响应
+@MainActor
 final class AppNotificationDelegate: NSObject, UNUserNotificationCenterDelegate, ObservableObject {
 
     /// App 在前台时仍显示 banner + sound
