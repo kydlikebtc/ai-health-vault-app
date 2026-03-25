@@ -8,14 +8,16 @@ struct HealthTrendView: View {
     let member: Member
     @State private var selectedPeriod: TrendPeriod = .month
 
-    private var filteredEntries: [WearableEntry] {
-        member.wearableData.filter { $0.recordedAt >= selectedPeriod.cutoffDate }
+    /// 一次性按类型分组并排序，避免 body 中多次重复线性扫描
+    private var groupedEntries: [WearableMetricType: [WearableEntry]] {
+        let cutoff = selectedPeriod.cutoffDate
+        let filtered = member.wearableData.filter { $0.recordedAt >= cutoff }
+        return Dictionary(grouping: filtered, by: \.metricType)
+            .mapValues { $0.sorted { $0.recordedAt < $1.recordedAt } }
     }
 
     private func entries(for type: WearableMetricType) -> [WearableEntry] {
-        filteredEntries
-            .filter { $0.metricType == type }
-            .sorted { $0.recordedAt < $1.recordedAt }
+        groupedEntries[type] ?? []
     }
 
     var body: some View {
@@ -31,7 +33,7 @@ struct HealthTrendView: View {
                 .padding(.horizontal)
 
                 // 今日健康摘要
-                HealthTodaySummaryCard(member: member, entries: filteredEntries)
+                HealthTodaySummaryCard(member: member, groupedEntries: groupedEntries)
                     .padding(.horizontal)
 
                 // 各项指标图表
@@ -103,18 +105,17 @@ struct HealthTrendView: View {
 
 struct HealthTodaySummaryCard: View {
     let member: Member
-    let entries: [WearableEntry]
+    /// 预分组 + 按时间升序排序的字典（由 HealthTrendView.groupedEntries 传入）
+    let groupedEntries: [WearableMetricType: [WearableEntry]]
 
-    // 每种指标最近一次读数
+    // 每种指标最近一次读数（字典中最后一条即最新）
     private func latestEntry(for type: WearableMetricType) -> WearableEntry? {
-        entries
-            .filter { $0.metricType == type }
-            .max(by: { $0.recordedAt < $1.recordedAt })
+        groupedEntries[type]?.last
     }
 
     // 相比此前均值的变化描述
     private func changeDescription(for type: WearableMetricType) -> (text: String, isPositive: Bool)? {
-        let allOfType = entries.filter { $0.metricType == type }.sorted { $0.recordedAt < $1.recordedAt }
+        let allOfType = groupedEntries[type] ?? []
         guard allOfType.count >= 3, let latest = allOfType.last else { return nil }
 
         // 取最近7条的均值（不含最新）作为基准

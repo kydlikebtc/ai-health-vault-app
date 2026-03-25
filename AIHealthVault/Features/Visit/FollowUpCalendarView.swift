@@ -48,35 +48,35 @@ struct FollowUpCalendarView: View {
 
     // MARK: - 聚合所有待办条目
 
-    private var allUpcomingItems: [CalendarItem] {
+    /// 单次完成：聚合、排序、按月分组 — 避免 content 中三次独立触发 O(n) 聚合
+    private var calendarPartition: (all: [CalendarItem], inMonth: [CalendarItem], upcoming: [CalendarItem]) {
         let now = Calendar.current.startOfDay(for: Date())
-        var items: [CalendarItem] = []
+        var all: [CalendarItem] = []
         for member in members {
             for visit in member.visits where (visit.followUpDate ?? .distantPast) >= now {
-                items.append(.visitFollowUp(member: member, visit: visit))
+                all.append(.visitFollowUp(member: member, visit: visit))
             }
             for checkup in member.checkups {
                 if let next = checkup.nextCheckupDate, next >= now {
-                    items.append(.checkupReview(member: member, checkup: checkup))
+                    all.append(.checkupReview(member: member, checkup: checkup))
                 }
             }
             for reminder in member.customReminders where !reminder.isCompleted && reminder.reminderDate >= now {
-                items.append(.customReminder(member: member, reminder: reminder))
+                all.append(.customReminder(member: member, reminder: reminder))
             }
         }
-        return items.sorted { $0.date < $1.date }
-    }
+        all.sort { $0.date < $1.date }
 
-    private var itemsInSelectedMonth: [CalendarItem] {
-        allUpcomingItems.filter {
-            Calendar.current.isDate($0.date, equalTo: selectedMonth, toGranularity: .month)
+        var inMonth: [CalendarItem] = []
+        var upcoming: [CalendarItem] = []
+        for item in all {
+            if Calendar.current.isDate(item.date, equalTo: selectedMonth, toGranularity: .month) {
+                inMonth.append(item)
+            } else {
+                upcoming.append(item)
+            }
         }
-    }
-
-    private var itemsOutsideSelectedMonth: [CalendarItem] {
-        allUpcomingItems.filter {
-            !Calendar.current.isDate($0.date, equalTo: selectedMonth, toGranularity: .month)
-        }
+        return (all, inMonth, upcoming)
     }
 
     var body: some View {
@@ -157,7 +157,8 @@ struct FollowUpCalendarView: View {
 
     @ViewBuilder
     private var content: some View {
-        if allUpcomingItems.isEmpty {
+        let partition = calendarPartition  // 单次计算，惰性分组
+        if partition.all.isEmpty {
             ContentUnavailableView(
                 "暂无待办提醒",
                 systemImage: "calendar.badge.clock",
@@ -165,7 +166,7 @@ struct FollowUpCalendarView: View {
             )
         } else {
             List {
-                let thisMonth = itemsInSelectedMonth
+                let thisMonth = partition.inMonth
                 if !thisMonth.isEmpty {
                     Section("本月待办（\(thisMonth.count) 项）") {
                         ForEach(thisMonth) { item in
@@ -180,7 +181,7 @@ struct FollowUpCalendarView: View {
                     }
                 }
 
-                let others = itemsOutsideSelectedMonth
+                let others = partition.upcoming
                 if !others.isEmpty {
                     Section("其他待办（\(others.count) 项）") {
                         ForEach(others.prefix(30)) { item in
