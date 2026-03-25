@@ -76,6 +76,9 @@ final class Member {
     @Relationship(deleteRule: .cascade, inverse: \CustomReminder.member)
     var customReminders: [CustomReminder]
 
+    @Relationship(deleteRule: .cascade, inverse: \DailyPlan.member)
+    var dailyPlans: [DailyPlan]
+
     init(
         name: String,
         birthday: Date? = nil,
@@ -100,6 +103,7 @@ final class Member {
         self.wearableData = []
         self.dailyTracking = []
         self.customReminders = []
+        self.dailyPlans = []
     }
 
     // MARK: - 计算属性

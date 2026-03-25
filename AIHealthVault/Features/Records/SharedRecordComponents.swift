@@ -12,6 +12,7 @@ struct DetailRow: View {
             Image(systemName: icon)
                 .foregroundStyle(.secondary)
                 .frame(width: 20)
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(label)
                     .font(.caption)
@@ -21,6 +22,8 @@ struct DetailRow: View {
             }
             Spacer()
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(label)：\(value)")
     }
 }
 

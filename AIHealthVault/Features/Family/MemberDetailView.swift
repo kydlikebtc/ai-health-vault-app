@@ -13,6 +13,7 @@ struct MemberDetailView: View {
             VStack(spacing: 20) {
                 headerCard
                 healthSummaryCard
+                DailyPlanCard(member: member)
                 recordSectionsGrid
             }
             .padding()

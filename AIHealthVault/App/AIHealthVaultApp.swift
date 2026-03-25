@@ -25,6 +25,7 @@ struct AIHealthVaultApp: App {
             TermCacheItem.self,
             CachedVisitPrep.self,
             CustomReminder.self,
+            DailyPlan.self,
         ])
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do {
