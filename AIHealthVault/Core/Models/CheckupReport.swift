@@ -11,6 +11,7 @@ final class CheckupReport {
     var summary: String         // 摘要/医生建议
     var abnormalItems: [String] // 异常指标列表
     var attachmentPaths: [String] // 附件路径（PDF、图片）
+    var rawText: String           // OCR 提取的原始文字（Vision framework）
     var createdAt: Date
 
     var member: Member?
@@ -27,6 +28,7 @@ final class CheckupReport {
         self.summary = ""
         self.abnormalItems = []
         self.attachmentPaths = []
+        self.rawText = ""
         self.createdAt = Date()
     }
 

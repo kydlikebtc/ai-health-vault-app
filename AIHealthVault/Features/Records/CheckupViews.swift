@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import PhotosUI
 
 // MARK: - 体检报告列表
 
@@ -169,6 +170,13 @@ struct CheckupDetailView: View {
                         }
                     }
                 }
+
+                // 图片附件画廊
+                if !report.attachmentPaths.isEmpty {
+                    DetailCard {
+                        CheckupImageGallerySection(report: report)
+                    }
+                }
             }
             .padding()
         }
@@ -211,7 +219,19 @@ struct AddEditCheckupView: View {
     @State private var hospitalName = ""
     @State private var summary = ""
     @State private var abnormalItemsText = ""
+
+    // 图片相关状态
+    @State private var existingImagePaths: [String] = []
+    @State private var pendingImages: [UIImage] = []
+    @State private var pickerItems: [PhotosPickerItem] = []
+    @State private var showingCamera = false
+    @State private var showingImageSourceMenu = false
+    @State private var imageToPreview: UIImage?
+
+    // 反馈
     @State private var showingValidationError = false
+    @State private var blurWarning = false
+    @State private var isSaving = false
 
     init(member: Member, report: CheckupReport? = nil) {
         self.member = member
@@ -239,6 +259,13 @@ struct AddEditCheckupView: View {
                     }
                 }
 
+                Section("报告图片") {
+                    imagePickerRow
+                    if !existingImagePaths.isEmpty || !pendingImages.isEmpty {
+                        imageThumbnailGrid
+                    }
+                }
+
                 Section("异常指标") {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("多个指标用换行分隔")
@@ -260,10 +287,15 @@ struct AddEditCheckupView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("取消") { dismiss() }
+                        .disabled(isSaving)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(isEditing ? "保存" : "添加") { saveAction() }
-                        .fontWeight(.semibold)
+                    if isSaving {
+                        ProgressView()
+                    } else {
+                        Button(isEditing ? "保存" : "添加") { Task { await saveAction() } }
+                            .fontWeight(.semibold)
+                    }
                 }
             }
             .onAppear { populateFields() }
@@ -272,8 +304,78 @@ struct AddEditCheckupView: View {
             } message: {
                 Text("报告标题不能为空")
             }
+            .alert("图片质量提示", isPresented: $blurWarning) {
+                Button("继续使用") {}
+                Button("重新拍摄", role: .cancel) { pendingImages.removeLast() }
+            } message: {
+                Text("图片可能模糊或光线不足，建议重新拍摄以确保 AI 识别准确。")
+            }
+            .sheet(isPresented: $showingCamera) {
+                CameraPickerView { image in
+                    handleNewImage(image)
+                }
+            }
+            .photosPicker(
+                isPresented: $showingImageSourceMenu,
+                selection: $pickerItems,
+                maxSelectionCount: 5,
+                matching: .images
+            )
+            .onChange(of: pickerItems) { _, newItems in
+                Task { await loadPickedImages(newItems) }
+            }
         }
     }
+
+    // MARK: - 图片选择行
+
+    private var imagePickerRow: some View {
+        HStack {
+            Label("添加图片", systemImage: "camera.badge.plus")
+                .foregroundStyle(.blue)
+            Spacer()
+            Menu {
+                Button {
+                    showingCamera = true
+                } label: {
+                    Label("拍照", systemImage: "camera")
+                }
+                Button {
+                    showingImageSourceMenu = true
+                } label: {
+                    Label("从相册选取", systemImage: "photo.on.rectangle")
+                }
+            } label: {
+                Image(systemName: "plus.circle.fill")
+                    .foregroundStyle(.blue)
+                    .font(.title3)
+            }
+        }
+    }
+
+    // MARK: - 已有/待添加图片缩略图
+
+    private var imageThumbnailGrid: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                // 已有图片（编辑模式）
+                ForEach(existingImagePaths, id: \.self) { path in
+                    ExistingImageThumb(path: path) {
+                        existingImagePaths.removeAll { $0 == path }
+                    }
+                }
+                // 待保存的新图片
+                ForEach(Array(pendingImages.enumerated()), id: \.offset) { idx, img in
+                    PendingImageThumb(image: img) {
+                        pendingImages.remove(at: idx)
+                    }
+                }
+            }
+            .padding(.vertical, 4)
+        }
+    }
+
+    // MARK: - 逻辑
 
     private func populateFields() {
         guard let r = report else { return }
@@ -282,26 +384,73 @@ struct AddEditCheckupView: View {
         hospitalName = r.hospitalName
         summary = r.summary
         abnormalItemsText = r.abnormalItems.joined(separator: "\n")
+        existingImagePaths = r.attachmentPaths
     }
 
-    private func saveAction() {
+    private func handleNewImage(_ image: UIImage) {
+        pendingImages.append(image)
+        Task {
+            let acceptable = await ImageStorageService.shared.isAcceptableQuality(image)
+            if !acceptable {
+                await MainActor.run { blurWarning = true }
+            }
+        }
+    }
+
+    private func loadPickedImages(_ items: [PhotosPickerItem]) async {
+        for item in items {
+            guard let data = try? await item.loadTransferable(type: Data.self),
+                  let image = UIImage(data: data) else { continue }
+            await MainActor.run { handleNewImage(image) }
+        }
+        await MainActor.run { pickerItems = [] }
+    }
+
+    private func saveAction() async {
         let trimmedTitle = reportTitle.trimmingCharacters(in: .whitespaces)
         guard !trimmedTitle.isEmpty else {
             showingValidationError = true
             return
         }
+        isSaving = true
+        defer { isSaving = false }
+
         let abnormalItems = abnormalItemsText
             .components(separatedBy: .newlines)
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
 
         if let r = report {
+            // 编辑模式：删除被用户移除的旧图片
+            let removed = r.attachmentPaths.filter { !existingImagePaths.contains($0) }
+            for path in removed {
+                await ImageStorageService.shared.delete(imagePath: path)
+            }
+
+            // 保存新增图片（使用已有 id，保证目录一致）
+            var newPaths: [String] = []
+            var ocrTexts: [String] = []
+            for image in pendingImages {
+                if let path = try? await ImageStorageService.shared.save(image: image, for: r.id) {
+                    newPaths.append(path)
+                }
+                if let text = try? await ImageStorageService.shared.extractText(from: image),
+                   !text.isEmpty {
+                    ocrTexts.append(text)
+                }
+            }
+
             r.reportTitle = trimmedTitle
             r.checkupDate = checkupDate
             r.hospitalName = hospitalName.trimmingCharacters(in: .whitespaces)
             r.summary = summary.trimmingCharacters(in: .whitespaces)
             r.abnormalItems = abnormalItems
+            r.attachmentPaths = existingImagePaths + newPaths
+            if !ocrTexts.isEmpty {
+                r.rawText = (r.rawText.isEmpty ? "" : r.rawText + "\n\n") + ocrTexts.joined(separator: "\n\n")
+            }
         } else {
+            // 新建模式：先创建对象获取 id，再用该 id 保存图片，保证路径与 id 一致
             let newReport = CheckupReport(
                 checkupDate: checkupDate,
                 hospitalName: hospitalName.trimmingCharacters(in: .whitespaces),
@@ -310,9 +459,91 @@ struct AddEditCheckupView: View {
             newReport.summary = summary.trimmingCharacters(in: .whitespaces)
             newReport.abnormalItems = abnormalItems
             newReport.member = member
+
+            var newPaths: [String] = []
+            var ocrTexts: [String] = []
+            for image in pendingImages {
+                if let path = try? await ImageStorageService.shared.save(image: image, for: newReport.id) {
+                    newPaths.append(path)
+                }
+                if let text = try? await ImageStorageService.shared.extractText(from: image),
+                   !text.isEmpty {
+                    ocrTexts.append(text)
+                }
+            }
+
+            newReport.attachmentPaths = newPaths
+            newReport.rawText = ocrTexts.joined(separator: "\n\n")
             modelContext.insert(newReport)
         }
         dismiss()
+    }
+}
+
+// MARK: - 已存图片缩略图（可删除）
+
+private struct ExistingImageThumb: View {
+    let path: String
+    let onDelete: () -> Void
+    @State private var image: UIImage?
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            Group {
+                if let img = image {
+                    Image(uiImage: img)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    Color.secondary.opacity(0.15)
+                        .overlay { ProgressView() }
+                }
+            }
+            .frame(width: 80, height: 100)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+
+            Button(action: onDelete) {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(.white, .red)
+                    .font(.callout)
+            }
+            .offset(x: 6, y: -6)
+        }
+        .task {
+            image = await ImageStorageService.shared.loadThumbnail(for: path)
+        }
+    }
+}
+
+// MARK: - 待保存图片缩略图（可删除）
+
+private struct PendingImageThumb: View {
+    let image: UIImage
+    let onDelete: () -> Void
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 80, height: 100)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay(alignment: .bottomLeading) {
+                    Text("待保存")
+                        .font(.caption2)
+                        .padding(3)
+                        .background(.ultraThinMaterial)
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                        .padding(4)
+                }
+
+            Button(action: onDelete) {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(.white, .red)
+                    .font(.callout)
+            }
+            .offset(x: 6, y: -6)
+        }
     }
 }
 
