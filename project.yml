@@ -49,15 +49,53 @@ targets:
           UIColorName: ""
           UIImageName: ""
 
+  AIHealthVaultTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: AIHealthVaultTests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.aihealthvault.tests
+        SWIFT_VERSION: "6.0"
+        SWIFT_STRICT_CONCURRENCY: complete
+        DEVELOPMENT_TEAM: ""
+        CODE_SIGN_STYLE: Automatic
+    dependencies:
+      - target: AIHealthVault
+
+  AIHealthVaultUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: AIHealthVaultUITests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.aihealthvault.uitests
+        SWIFT_VERSION: "6.0"
+        DEVELOPMENT_TEAM: ""
+        CODE_SIGN_STYLE: Automatic
+    dependencies:
+      - target: AIHealthVault
+
 schemes:
   AIHealthVault:
     build:
       targets:
         AIHealthVault: all
+        AIHealthVaultTests: [test]
+        AIHealthVaultUITests: [test]
     run:
       config: Debug
     test:
       config: Debug
+      targets:
+        - name: AIHealthVaultTests
+          parallelizable: true
+          randomExecutionOrder: true
+        - name: AIHealthVaultUITests
     profile:
       config: Release
     analyze:
