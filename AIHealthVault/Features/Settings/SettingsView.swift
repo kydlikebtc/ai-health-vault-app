@@ -10,6 +10,9 @@ struct SettingsView: View {
     @State private var showHealthKitAlert = false
     @State private var healthKitAlertMessage = ""
 
+    // AI Settings
+    @State private var showAISettings = false
+
     var body: some View {
         List {
             Section("账户") {
@@ -44,6 +47,40 @@ struct SettingsView: View {
                     Text("此设备或模拟器不支持 HealthKit")
                 } else if healthKitService.authorizationStatus == .denied {
                     Text("已拒绝 Apple Health 权限。请前往「设置 → 健康 → 数据访问与设备」中重新授权")
+                }
+            }
+
+            // MARK: - AI Section
+            Section {
+                Button {
+                    showAISettings = true
+                } label: {
+                    HStack {
+                        Label("Claude AI 配置", systemImage: "brain.head.profile")
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .foregroundStyle(.primary)
+
+                let aiMgr = AISettingsManager.shared
+                Toggle("启用 AI 功能", isOn: Binding(
+                    get: { aiMgr.isAIEnabled },
+                    set: { aiMgr.isAIEnabled = $0 }
+                ))
+
+                if aiMgr.isAPIKeyConfigured {
+                    LabeledContent("本月用量", value: "\(aiMgr.monthlyTotalTokens) tokens")
+                    LabeledContent("预估费用", value: aiMgr.estimatedMonthlyCostDisplay)
+                }
+            } header: {
+                Text("AI 助手")
+            } footer: {
+                let aiMgr = AISettingsManager.shared
+                if !aiMgr.isAPIKeyConfigured {
+                    Text("未配置 API Key，AI 功能不可用。请点击上方进行配置。")
                 }
             }
 
@@ -84,6 +121,9 @@ struct SettingsView: View {
             }
         }
         .navigationTitle("设置")
+        .sheet(isPresented: $showAISettings) {
+            AISettingsView()
+        }
         .alert("HealthKit", isPresented: $showHealthKitAlert) {
             Button("确定", role: .cancel) {}
         } message: {

@@ -144,6 +144,13 @@ struct MemberDetailView: View {
                 color: .teal,
                 destination: AnyView(DailyLogListView(member: member))
             )
+            RecordCategoryCard(
+                title: "健康趋势",
+                icon: "chart.line.uptrend.xyaxis",
+                count: member.wearableData.count,
+                color: .green,
+                destination: AnyView(HealthTrendView(member: member))
+            )
         }
     }
 

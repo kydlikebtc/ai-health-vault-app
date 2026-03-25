@@ -116,6 +116,7 @@ struct CheckupDetailView: View {
     let report: CheckupReport
     let member: Member
     @State private var showingEdit = false
+    @State private var showingAIAnalysis = false
 
     var body: some View {
         ScrollView {
@@ -175,11 +176,23 @@ struct CheckupDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button("编辑") { showingEdit = true }
+                HStack {
+                    Button {
+                        showingAIAnalysis = true
+                    } label: {
+                        Label("AI 解读", systemImage: "brain.head.profile")
+                    }
+                    Button("编辑") { showingEdit = true }
+                }
             }
         }
         .sheet(isPresented: $showingEdit) {
             AddEditCheckupView(member: member, report: report)
+        }
+        .sheet(isPresented: $showingAIAnalysis) {
+            NavigationStack {
+                ReportAnalysisFromReportView(report: report, member: member)
+            }
         }
     }
 }
