@@ -1,0 +1,66 @@
+name: AIHealthVault
+options:
+  bundleIdPrefix: com.aihealthvault
+  deploymentTarget:
+    iOS: "17.0"
+  defaultConfig: Debug
+  xcodeVersion: "16.0"
+  generateEmptyDirectories: true
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+
+targets:
+  AIHealthVault:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: AIHealthVault
+    resources:
+      - path: AIHealthVault/Resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.aihealthvault.app
+        PRODUCT_NAME: AI Health Vault
+        SWIFT_STRICT_CONCURRENCY: complete
+        ENABLE_HARDENED_RUNTIME: YES
+        INFOPLIST_FILE: AIHealthVault/Resources/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        DEVELOPMENT_TEAM: ""
+        CODE_SIGN_STYLE: Automatic
+    entitlements:
+      path: AIHealthVault/Resources/AIHealthVault.entitlements
+    info:
+      path: AIHealthVault/Resources/Info.plist
+      properties:
+        CFBundleDisplayName: AI Health Vault
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        NSFaceIDUsageDescription: "AI Health Vault 使用 Face ID 保护您的健康数据安全"
+        NSHealthShareUsageDescription: "AI Health Vault 读取 Apple Health 数据以追踪健康指标"
+        NSHealthUpdateUsageDescription: "AI Health Vault 将健康追踪数据写入 Apple Health"
+        NSCameraUsageDescription: "AI Health Vault 使用摄像头拍摄体检报告以供 AI 分析"
+        NSPhotoLibraryUsageDescription: "AI Health Vault 从相册选取体检报告图片"
+        UILaunchScreen:
+          UIColorName: ""
+          UIImageName: ""
+
+schemes:
+  AIHealthVault:
+    build:
+      targets:
+        AIHealthVault: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release

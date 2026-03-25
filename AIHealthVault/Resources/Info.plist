@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>AI Health Vault</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>NSCameraUsageDescription</key>
+	<string>AI Health Vault 使用摄像头拍摄体检报告以供 AI 分析</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>AI Health Vault 使用 Face ID 保护您的健康数据安全</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>AI Health Vault 读取 Apple Health 数据以追踪健康指标</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>AI Health Vault 将健康追踪数据写入 Apple Health</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>AI Health Vault 从相册选取体检报告图片</string>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string></string>
+		<key>UIImageName</key>
+		<string></string>
+	</dict>
+</dict>
+</plist>
