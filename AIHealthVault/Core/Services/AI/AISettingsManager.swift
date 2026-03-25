@@ -122,8 +122,12 @@ final class AISettingsManager {
     }
 
     private func currentMonthKey() -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM"
-        return formatter.string(from: Date())
+        AISettingsManager.monthKeyFormatter.string(from: Date())
     }
+
+    private static let monthKeyFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM"
+        return f
+    }()
 }
