@@ -235,7 +235,8 @@ struct AIConversationView: View {
                         .padding()
                     }
                     .onChange(of: streamingResponse) { _, _ in
-                        withAnimation { proxy.scrollTo("streaming") }
+                        // 流式接收时不使用动画，避免高频 token 到达时动画积压导致卡顿
+                        proxy.scrollTo("streaming", anchor: .bottom)
                     }
                 }
 
