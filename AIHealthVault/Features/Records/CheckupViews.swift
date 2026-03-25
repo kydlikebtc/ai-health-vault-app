@@ -391,10 +391,11 @@ struct AddEditCheckupView: View {
     private func handleNewImage(_ image: UIImage) {
         pendingImages.append(image)
         Task {
-            let acceptable = await ImageStorageService.shared.isAcceptableQuality(image)
-            if !acceptable {
-                await MainActor.run { blurWarning = true }
-            }
+            // isAcceptableQuality 含 Core Image 像素遍历，detach 到后台线程，避免阻塞主线程
+            let acceptable = await Task.detached(priority: .userInitiated) {
+                ImageStorageService.shared.isAcceptableQuality(image)
+            }.value
+            if !acceptable { blurWarning = true }
         }
     }
 
@@ -512,7 +513,9 @@ private struct ExistingImageThumb: View {
             .offset(x: 6, y: -6)
         }
         .task {
-            image = await ImageStorageService.shared.loadThumbnail(for: path)
+            image = await Task.detached(priority: .userInitiated) {
+                ImageStorageService.shared.loadThumbnail(for: path)
+            }.value
         }
     }
 }

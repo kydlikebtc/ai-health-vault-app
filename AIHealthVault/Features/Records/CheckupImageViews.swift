@@ -89,12 +89,11 @@ private struct ThumbnailCell: View {
         .frame(width: 90, height: 120)
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .task {
-            await loadThumbnail()
+            // 在后台线程读取文件，避免主线程阻塞
+            thumbnail = await Task.detached(priority: .userInitiated) {
+                ImageStorageService.shared.loadThumbnail(for: imagePath)
+            }.value
         }
-    }
-
-    private func loadThumbnail() async {
-        thumbnail = await ImageStorageService.shared.loadThumbnail(for: imagePath)
     }
 }
 
@@ -200,10 +199,11 @@ struct FullscreenImageViewer: View {
     }
 
     private func loadImages() async {
+        // loadImage 为 nonisolated，各 task 可真正并发（不经 actor 序列化）
         await withTaskGroup(of: (String, UIImage?).self) { group in
             for path in paths {
                 group.addTask {
-                    let img = await ImageStorageService.shared.loadImage(at: path)
+                    let img = ImageStorageService.shared.loadImage(at: path)
                     return (path, img)
                 }
             }

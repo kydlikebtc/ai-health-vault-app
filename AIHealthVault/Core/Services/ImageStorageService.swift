@@ -52,12 +52,13 @@ actor ImageStorageService {
     }
 
     // MARK: - 读取图片
+    // nonisolated：纯磁盘读取，不访问可变 actor 状态，允许调用方并发加载多张图片
 
-    func loadImage(at path: String) -> UIImage? {
+    nonisolated func loadImage(at path: String) -> UIImage? {
         UIImage(contentsOfFile: path)
     }
 
-    func loadThumbnail(for imagePath: String) -> UIImage? {
+    nonisolated func loadThumbnail(for imagePath: String) -> UIImage? {
         let thumbPath = thumbnailPath(from: imagePath)
         return UIImage(contentsOfFile: thumbPath) ?? UIImage(contentsOfFile: imagePath)
     }
@@ -110,7 +111,7 @@ actor ImageStorageService {
 
     /// 返回图片模糊程度评分（0 = 极模糊，1 = 清晰）。
     /// 基于拉普拉斯方差法：清晰图片边缘对比度高，方差大。
-    func blurScore(of image: UIImage) -> Double {
+    nonisolated func blurScore(of image: UIImage) -> Double {
         guard let cgImage = image.cgImage else { return 0 }
         let ciImage = CIImage(cgImage: cgImage)
 
@@ -148,7 +149,7 @@ actor ImageStorageService {
     }
 
     /// 判断图片是否达到可用质量（score > 0.05 即可接受）
-    func isAcceptableQuality(_ image: UIImage) -> Bool {
+    nonisolated func isAcceptableQuality(_ image: UIImage) -> Bool {
         blurScore(of: image) > 0.05
     }
 
@@ -178,7 +179,7 @@ actor ImageStorageService {
         return "\(base)\(thumbnailSuffix).\(ext)"
     }
 
-    private func thumbnailPath(from imagePath: String) -> String {
+    nonisolated private func thumbnailPath(from imagePath: String) -> String {
         let base = (imagePath as NSString).deletingPathExtension
         let ext = (imagePath as NSString).pathExtension
         return "\(base)\(thumbnailSuffix).\(ext)"
