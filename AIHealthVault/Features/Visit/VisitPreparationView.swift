@@ -22,8 +22,10 @@ struct VisitPreparationView: View {
                     inputSection
                     if viewModel.phase != .idle || !viewModel.result.isEmpty {
                         resultSection
+                            .transition(.opacity.combined(with: .move(edge: .bottom)))
                     }
                 }
+                .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
                 .padding()
             }
             .navigationTitle("就诊准备")
