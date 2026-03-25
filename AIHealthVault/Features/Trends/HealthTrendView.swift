@@ -8,20 +8,14 @@ struct HealthTrendView: View {
     let member: Member
     @State private var selectedPeriod: TrendPeriod = .month
 
-    /// 一次性按类型分组并排序，避免 body 中多次重复线性扫描
-    private var groupedEntries: [WearableMetricType: [WearableEntry]] {
+    var body: some View {
+        // body 内计算一次，12 处图表区块直接引用局部变量，避免重复线性扫描
         let cutoff = selectedPeriod.cutoffDate
         let filtered = member.wearableData.filter { $0.recordedAt >= cutoff }
-        return Dictionary(grouping: filtered, by: \.metricType)
+        let grouped = Dictionary(grouping: filtered, by: \.metricType)
             .mapValues { $0.sorted { $0.recordedAt < $1.recordedAt } }
-    }
 
-    private func entries(for type: WearableMetricType) -> [WearableEntry] {
-        groupedEntries[type] ?? []
-    }
-
-    var body: some View {
-        ScrollView {
+        return ScrollView {
             VStack(spacing: 16) {
                 // 时间范围选择
                 Picker("时间范围", selection: $selectedPeriod) {
@@ -33,63 +27,39 @@ struct HealthTrendView: View {
                 .padding(.horizontal)
 
                 // 今日健康摘要
-                HealthTodaySummaryCard(member: member, groupedEntries: groupedEntries)
+                HealthTodaySummaryCard(member: member, groupedEntries: grouped)
                     .padding(.horizontal)
 
                 // 各项指标图表
                 Group {
-                    TrendChartSection(
-                        title: "体重趋势",
-                        icon: "scalemass",
-                        color: .blue,
-                        isEmpty: entries(for: .weight).isEmpty
-                    ) {
-                        WeightTrendChart(entries: entries(for: .weight), member: member)
+                    let weight = grouped[.weight] ?? []
+                    TrendChartSection(title: "体重趋势", icon: "scalemass", color: .blue, isEmpty: weight.isEmpty) {
+                        WeightTrendChart(entries: weight, member: member)
                     }
 
-                    TrendChartSection(
-                        title: "血压趋势",
-                        icon: "waveform.path.ecg",
-                        color: .red,
-                        isEmpty: entries(for: .bloodPressure).isEmpty
-                    ) {
-                        BloodPressureTrendChart(entries: entries(for: .bloodPressure))
+                    let bp = grouped[.bloodPressure] ?? []
+                    TrendChartSection(title: "血压趋势", icon: "waveform.path.ecg", color: .red, isEmpty: bp.isEmpty) {
+                        BloodPressureTrendChart(entries: bp)
                     }
 
-                    TrendChartSection(
-                        title: "心率趋势",
-                        icon: "heart.fill",
-                        color: .pink,
-                        isEmpty: entries(for: .heartRate).isEmpty
-                    ) {
-                        HeartRateTrendChart(entries: entries(for: .heartRate))
+                    let hr = grouped[.heartRate] ?? []
+                    TrendChartSection(title: "心率趋势", icon: "heart.fill", color: .pink, isEmpty: hr.isEmpty) {
+                        HeartRateTrendChart(entries: hr)
                     }
 
-                    TrendChartSection(
-                        title: "步数趋势",
-                        icon: "figure.walk",
-                        color: .green,
-                        isEmpty: entries(for: .steps).isEmpty
-                    ) {
-                        StepsTrendChart(entries: entries(for: .steps), period: selectedPeriod)
+                    let steps = grouped[.steps] ?? []
+                    TrendChartSection(title: "步数趋势", icon: "figure.walk", color: .green, isEmpty: steps.isEmpty) {
+                        StepsTrendChart(entries: steps, period: selectedPeriod)
                     }
 
-                    TrendChartSection(
-                        title: "睡眠趋势",
-                        icon: "moon.fill",
-                        color: .indigo,
-                        isEmpty: entries(for: .sleepHours).isEmpty
-                    ) {
-                        SleepTrendChart(entries: entries(for: .sleepHours))
+                    let sleep = grouped[.sleepHours] ?? []
+                    TrendChartSection(title: "睡眠趋势", icon: "moon.fill", color: .indigo, isEmpty: sleep.isEmpty) {
+                        SleepTrendChart(entries: sleep)
                     }
 
-                    TrendChartSection(
-                        title: "血氧趋势",
-                        icon: "lungs.fill",
-                        color: .cyan,
-                        isEmpty: entries(for: .bloodOxygen).isEmpty
-                    ) {
-                        BloodOxygenTrendChart(entries: entries(for: .bloodOxygen))
+                    let spo2 = grouped[.bloodOxygen] ?? []
+                    TrendChartSection(title: "血氧趋势", icon: "lungs.fill", color: .cyan, isEmpty: spo2.isEmpty) {
+                        BloodOxygenTrendChart(entries: spo2)
                     }
                 }
                 .padding(.horizontal)
