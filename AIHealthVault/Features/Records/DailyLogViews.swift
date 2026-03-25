@@ -306,6 +306,7 @@ struct AddEditDailyLogView: View {
                                     Text(level.emoji)
                                         .font(.title)
                                         .opacity(mood == level ? 1.0 : 0.3)
+                                        .scaleEffect(mood == level ? 1.15 : 1.0)
                                 }
                                 .buttonStyle(.plain)
                                 if level != .veryGood {
@@ -313,6 +314,7 @@ struct AddEditDailyLogView: View {
                                 }
                             }
                         }
+                        .animation(.spring(response: 0.25, dampingFraction: 0.6), value: mood)
                         .padding(.vertical, 4)
                     }
                     .padding(.vertical, 2)

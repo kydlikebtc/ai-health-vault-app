@@ -251,12 +251,15 @@ struct DailyPlanDetailView: View {
     private func checkInRow(key: String) -> some View {
         let done = plan.completedActions.contains(key)
         return Button {
-            plan.toggleAction(key)
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                plan.toggleAction(key)
+            }
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: done ? "checkmark.circle.fill" : "circle")
                     .font(.title3)
                     .foregroundStyle(done ? .green : .secondary)
+                    .contentTransition(.symbolEffect(.replace))
                     .accessibilityHidden(true)
                 Label(actionLabels[key] ?? key,
                       systemImage: actionIcons[key] ?? "checkmark")
@@ -270,6 +273,7 @@ struct DailyPlanDetailView: View {
         }
         .buttonStyle(.plain)
         .accessibilityValue(done ? "已完成" : "未完成")
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: done)
     }
 }
 
