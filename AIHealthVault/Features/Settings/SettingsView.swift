@@ -4,12 +4,47 @@ import SwiftData
 /// 应用设置页
 struct SettingsView: View {
     @EnvironmentObject private var authService: AuthenticationService
+    @EnvironmentObject private var healthKitService: HealthKitService
     @Query private var members: [Member]
+
+    @State private var showHealthKitAlert = false
+    @State private var healthKitAlertMessage = ""
 
     var body: some View {
         List {
             Section("账户") {
                 LabeledContent("家庭成员数", value: "\(members.count)")
+            }
+
+            // MARK: - HealthKit Section
+            Section {
+                healthKitStatusRow
+                if healthKitService.isAvailable {
+                    if healthKitService.authorizationStatus == .notDetermined {
+                        Button {
+                            Task { await requestHealthKitAuth() }
+                        } label: {
+                            Label("连接 Apple Health", systemImage: "heart.text.square")
+                        }
+                    }
+                    if let lastSync = healthKitService.lastSyncDate {
+                        LabeledContent("上次同步", value: lastSync.localizedRelativeString)
+                    }
+                    if healthKitService.isSyncing {
+                        HStack {
+                            ProgressView().controlSize(.small)
+                            Text("正在同步…").foregroundStyle(.secondary).font(.subheadline)
+                        }
+                    }
+                }
+            } header: {
+                Text("Apple Health")
+            } footer: {
+                if !healthKitService.isAvailable {
+                    Text("此设备或模拟器不支持 HealthKit")
+                } else if healthKitService.authorizationStatus == .denied {
+                    Text("已拒绝 Apple Health 权限。请前往「设置 → 健康 → 数据访问与设备」中重新授权")
+                }
             }
 
             Section("安全") {
@@ -49,7 +84,57 @@ struct SettingsView: View {
             }
         }
         .navigationTitle("设置")
+        .alert("HealthKit", isPresented: $showHealthKitAlert) {
+            Button("确定", role: .cancel) {}
+        } message: {
+            Text(healthKitAlertMessage)
+        }
     }
+
+    // MARK: - Subviews
+
+    private var healthKitStatusRow: some View {
+        HStack {
+            Image(systemName: healthKitService.isAvailable
+                  ? healthKitService.authorizationStatus.iconName
+                  : "iphone.slash")
+                .foregroundStyle(statusColor)
+                .frame(width: 24)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Apple Health 连接")
+                    .font(.body)
+                Text(healthKitService.isAvailable
+                     ? healthKitService.authorizationStatus.displayName
+                     : "不支持")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var statusColor: Color {
+        guard healthKitService.isAvailable else { return .secondary }
+        switch healthKitService.authorizationStatus {
+        case .authorized:    return .green
+        case .denied:        return .red
+        case .restricted:    return .orange
+        case .notDetermined: return .secondary
+        }
+    }
+
+    // MARK: - Actions
+
+    private func requestHealthKitAuth() async {
+        do {
+            try await healthKitService.requestAuthorization()
+        } catch {
+            healthKitAlertMessage = "授权失败：\(error.localizedDescription)"
+            showHealthKitAlert = true
+        }
+    }
+
+    // MARK: - Helpers
 
     private var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -60,10 +145,21 @@ struct SettingsView: View {
     }
 }
 
+// MARK: - Date Extension (local)
+
+private extension Date {
+    var localizedRelativeString: String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .short
+        return formatter.localizedString(for: self, relativeTo: .now)
+    }
+}
+
 #Preview {
     NavigationStack {
         SettingsView()
             .environmentObject(AuthenticationService())
+            .environmentObject(HealthKitService())
     }
     .modelContainer(for: [Member.self], inMemory: true)
 }

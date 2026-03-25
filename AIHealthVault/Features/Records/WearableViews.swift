@@ -5,6 +5,7 @@ import SwiftData
 
 struct WearableListView: View {
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var healthKitService: HealthKitService
     let member: Member
 
     @State private var searchText = ""
@@ -13,6 +14,8 @@ struct WearableListView: View {
     @State private var recordToEdit: WearableEntry?
     @State private var recordToDelete: WearableEntry?
     @State private var showingDeleteAlert = false
+    @State private var showSyncError = false
+    @State private var syncErrorMessage = ""
 
     private var filteredEntries: [WearableEntry] {
         var list = member.wearableData.sorted { $0.recordedAt > $1.recordedAt }
@@ -29,7 +32,7 @@ struct WearableListView: View {
 
     var body: some View {
         Group {
-            if member.wearableData.isEmpty && searchText.isEmpty {
+            if member.wearableData.isEmpty && searchText.isEmpty && !healthKitService.isAvailable {
                 ContentUnavailableView {
                     Label("暂无体征数据", systemImage: "applewatch")
                 } actions: {
@@ -38,6 +41,15 @@ struct WearableListView: View {
                 }
             } else {
                 List {
+                    // 今日健康摘要卡片（仅 HealthKit 已授权时显示）
+                    if healthKitService.isAvailable && healthKitService.authorizationStatus == .authorized {
+                        Section {
+                            TodayHealthSummaryCard(member: member)
+                                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                                .listRowBackground(Color.clear)
+                        }
+                    }
+
                     ForEach(filteredEntries) { entry in
                         WearableRow(entry: entry)
                             .swipeActions(edge: .trailing) {
@@ -86,8 +98,22 @@ struct WearableListView: View {
                 }
             }
             ToolbarItem(placement: .primaryAction) {
-                Button { showingAdd = true } label: {
-                    Image(systemName: "plus")
+                HStack {
+                    if healthKitService.isAvailable && healthKitService.authorizationStatus == .authorized {
+                        Button {
+                            Task { await syncFromHealthKit() }
+                        } label: {
+                            if healthKitService.isSyncing {
+                                ProgressView().controlSize(.small)
+                            } else {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                            }
+                        }
+                        .disabled(healthKitService.isSyncing)
+                    }
+                    Button { showingAdd = true } label: {
+                        Image(systemName: "plus")
+                    }
                 }
             }
         }
@@ -103,6 +129,35 @@ struct WearableListView: View {
         } message: { _ in
             Text("确定要删除这条体征数据吗？")
         }
+        .alert("同步失败", isPresented: $showSyncError) {
+            Button("确定", role: .cancel) {}
+        } message: {
+            Text(syncErrorMessage)
+        }
+        .task {
+            // App 进入页面时自动拉取增量数据
+            await autoSync()
+        }
+    }
+
+    // MARK: - Actions
+
+    private func syncFromHealthKit() async {
+        do {
+            let newCount = try await healthKitService.syncToSwiftData(member: member, context: modelContext)
+            print("[WearableListView] 手动同步完成，新增 \(newCount) 条")
+        } catch {
+            syncErrorMessage = error.localizedDescription
+            showSyncError = true
+        }
+    }
+
+    private func autoSync() async {
+        guard healthKitService.isAvailable,
+              healthKitService.authorizationStatus == .authorized,
+              !healthKitService.isSyncing
+        else { return }
+        try? await healthKitService.syncToSwiftData(member: member, context: modelContext)
     }
 }
 
@@ -126,7 +181,12 @@ struct WearableRow: View {
                     Text(entry.recordedAt.localizedDateString)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    if !entry.source.isEmpty && entry.source != "手动录入" {
+                    if entry.isFromHealthKit {
+                        Label("Apple Health", systemImage: "heart.text.square.fill")
+                            .font(.caption2)
+                            .foregroundStyle(.pink)
+                            .labelStyle(.titleAndIcon)
+                    } else if !entry.source.isEmpty && entry.source != "手动录入" {
                         Text("·")
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -306,11 +366,120 @@ struct AddEditWearableView: View {
     }
 }
 
+// MARK: - Today Health Summary Card
+
+/// 今日健康摘要卡片——展示从 HealthKit 读取的当日关键指标
+struct TodayHealthSummaryCard: View {
+    @EnvironmentObject private var healthKitService: HealthKitService
+    let member: Member
+
+    @State private var summary: HealthKitTodaySummary? = nil
+    @State private var isLoading = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Label("今日健康", systemImage: "heart.fill")
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.pink)
+                Spacer()
+                if isLoading {
+                    ProgressView().controlSize(.mini)
+                } else {
+                    Button {
+                        Task { await fetchSummary() }
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .padding(.horizontal)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
+
+            if let summary, !summary.isEmpty {
+                LazyVGrid(
+                    columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())],
+                    spacing: 12
+                ) {
+                    if let steps = summary.steps {
+                        SummaryMetricCell(icon: "figure.walk", color: .green, label: "步数",
+                                          value: "\(steps)", unit: "步")
+                    }
+                    if let hr = summary.heartRate {
+                        SummaryMetricCell(icon: "heart.fill", color: .red, label: "心率",
+                                          value: String(format: "%.0f", hr), unit: "bpm")
+                    }
+                    if let sleep = summary.sleepHours {
+                        SummaryMetricCell(icon: "moon.fill", color: .indigo, label: "睡眠",
+                                          value: String(format: "%.1f", sleep), unit: "小时")
+                    }
+                    if let weight = summary.weight {
+                        SummaryMetricCell(icon: "scalemass", color: .orange, label: "体重",
+                                          value: String(format: "%.1f", weight), unit: "kg")
+                    }
+                    if let sys = summary.systolicBP, let dia = summary.diastolicBP {
+                        SummaryMetricCell(icon: "waveform.path.ecg", color: .blue, label: "血压",
+                                          value: "\(Int(sys))/\(Int(dia))", unit: "mmHg")
+                    }
+                    if let oxygen = summary.bloodOxygen {
+                        SummaryMetricCell(icon: "lungs.fill", color: .teal, label: "血氧",
+                                          value: String(format: "%.1f", oxygen), unit: "%")
+                    }
+                }
+                .padding([.horizontal, .bottom])
+            }
+        }
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .task { await fetchSummary() }
+    }
+
+    private func fetchSummary() async {
+        guard healthKitService.isAvailable, healthKitService.authorizationStatus == .authorized else { return }
+        isLoading = true
+        summary = try? await healthKitService.fetchTodaySummary()
+        isLoading = false
+    }
+}
+
+// MARK: - Summary Metric Cell
+
+private struct SummaryMetricCell: View {
+    let icon: String
+    let color: Color
+    let label: String
+    let value: String
+    let unit: String
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundStyle(color)
+            Text(value)
+                .font(.subheadline.monospacedDigit().bold())
+            Text("\(label)·\(unit)")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .background(color.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+}
+
 // MARK: - Preview
 
 #Preview {
     NavigationStack {
         WearableListView(member: MockData.sampleMember)
+            .environmentObject(HealthKitService())
     }
     .modelContainer(MockData.previewContainer)
 }

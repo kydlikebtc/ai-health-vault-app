@@ -60,7 +60,8 @@ final class WearableEntry {
     var value: Double           // 主值
     var secondaryValue: Double  // 次值（如血压舒张压）
     var recordedAt: Date        // 记录时间
-    var source: String          // 数据来源（如 "Apple Watch", "手动录入"）
+    var source: String          // 数据来源（如 "Apple Health", "手动录入"）
+    var healthKitSampleId: String?  // HKSample UUID，用于去重（nil 表示手动录入）
     var notes: String
     var createdAt: Date
 
@@ -87,6 +88,9 @@ final class WearableEntry {
         get { WearableMetricType(rawValue: metricTypeRaw) ?? .heartRate }
         set { metricTypeRaw = newValue.rawValue }
     }
+
+    /// 是否来自 Apple Health 自动同步（非手动录入）
+    var isFromHealthKit: Bool { healthKitSampleId != nil }
 
     /// 格式化显示值
     var displayValue: String {
