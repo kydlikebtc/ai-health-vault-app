@@ -5,7 +5,8 @@ struct MemberDetailView: View {
     @Environment(\.modelContext) private var modelContext
     let member: Member
 
-    @State private var showingEdit = false
+    @State private var showingEdit   = false
+    @State private var showingExport = false
 
     var body: some View {
         ScrollView {
@@ -20,11 +21,21 @@ struct MemberDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button("编辑") { showingEdit = true }
+                HStack(spacing: 4) {
+                    Button {
+                        showingExport = true
+                    } label: {
+                        Image(systemName: "square.and.arrow.up")
+                    }
+                    Button("编辑") { showingEdit = true }
+                }
             }
         }
         .sheet(isPresented: $showingEdit) {
             AddEditMemberView(member: member)
+        }
+        .sheet(isPresented: $showingExport) {
+            HealthExportView(member: member)
         }
     }
 

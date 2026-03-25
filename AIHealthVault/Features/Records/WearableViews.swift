@@ -1,5 +1,8 @@
 import SwiftUI
 import SwiftData
+import os
+
+private let wearableLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.aihealthvault", category: "WearableViews")
 
 // MARK: - 体征数据列表
 
@@ -145,7 +148,7 @@ struct WearableListView: View {
     private func syncFromHealthKit() async {
         do {
             let newCount = try await healthKitService.syncToSwiftData(member: member, context: modelContext)
-            print("[WearableListView] 手动同步完成，新增 \(newCount) 条")
+            wearableLogger.info("手动同步完成，新增 \(newCount, format: .decimal) 条")
         } catch {
             syncErrorMessage = error.localizedDescription
             showSyncError = true

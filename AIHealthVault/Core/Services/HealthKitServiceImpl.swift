@@ -1,6 +1,9 @@
 import Foundation
 import HealthKit
 import SwiftData
+import os
+
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.aihealthvault", category: "HealthKit")
 
 // MARK: - HealthKitService
 
@@ -52,12 +55,12 @@ final class HealthKitService: ObservableObject, HealthKitServiceProtocol {
 
     func requestAuthorization() async throws {
         guard isAvailable else {
-            print("[HealthKit] 设备不支持 HealthKit（模拟器），跳过授权")
+            logger.debug("设备不支持 HealthKit（模拟器），跳过授权")
             return
         }
         try await store.requestAuthorization(toShare: [], read: readTypes)
         refreshAuthorizationStatus()
-        print("[HealthKit] 授权请求完成，状态: \(authorizationStatus.displayName)")
+        logger.info("授权请求完成，状态: \(self.authorizationStatus.displayName, privacy: .public)")
     }
 
     private func refreshAuthorizationStatus() {
@@ -75,7 +78,7 @@ final class HealthKitService: ObservableObject, HealthKitServiceProtocol {
     /// 读取今日健康摘要（轻量级，并发抓取所有指标）
     func fetchTodaySummary() async throws -> HealthKitTodaySummary {
         guard isAvailable else {
-            print("[HealthKit] 不可用，返回空摘要")
+            logger.debug("不可用，返回空摘要")
             return HealthKitTodaySummary()
         }
         async let steps      = fetchTodaySteps()
@@ -86,7 +89,7 @@ final class HealthKitService: ObservableObject, HealthKitServiceProtocol {
         async let oxygen     = fetchLatestBloodOxygen()
 
         let (s, hr, sl, w, bpResult, ox) = try await (steps, heartRate, sleep, weight, bp, oxygen)
-        print("[HealthKit] 摘要抓取完成: 步数=\(s ?? -1), 心率=\(hr ?? -1), 睡眠=\(sl ?? -1)h")
+        logger.info("摘要抓取完成: 步数=\(s ?? -1, format: .decimal), 心率=\(hr ?? -1, format: .decimal), 睡眠=\(sl ?? -1, format: .decimal)h")
         return HealthKitTodaySummary(
             steps:       s,
             heartRate:   hr,
@@ -118,7 +121,7 @@ final class HealthKitService: ObservableObject, HealthKitServiceProtocol {
             try context.save()
         }
         lastSyncDate = .now
-        print("[HealthKit] 同步完成，新增 \(total) 条记录 (成员: \(member.name))")
+        logger.info("同步完成，新增 \(total, format: .decimal) 条记录")
         return total
     }
 
@@ -131,16 +134,16 @@ final class HealthKitService: ObservableObject, HealthKitServiceProtocol {
         for sampleType in observableTypes {
             let query = HKObserverQuery(sampleType: sampleType, predicate: nil) { _, completionHandler, error in
                 if let error {
-                    print("[HealthKit] Observer 回调错误 (\(sampleType.identifier)): \(error)")
+                    logger.error("Observer 回调错误 (\(sampleType.identifier, privacy: .public)): \(error.localizedDescription, privacy: .public)")
                 } else {
-                    print("[HealthKit] 检测到新数据: \(sampleType.identifier)")
+                    logger.debug("检测到新数据: \(sampleType.identifier, privacy: .public)")
                     onNewData()
                 }
                 completionHandler()
             }
             store.execute(query)
             try await store.enableBackgroundDelivery(for: sampleType, frequency: .immediate)
-            print("[HealthKit] 后台 delivery 已启用: \(sampleType.identifier)")
+            logger.debug("后台 delivery 已启用: \(sampleType.identifier, privacy: .public)")
         }
     }
 

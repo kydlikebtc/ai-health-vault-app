@@ -12,6 +12,7 @@ final class CheckupReport {
     var abnormalItems: [String] // 异常指标列表
     var attachmentPaths: [String] // 附件路径（PDF、图片）
     var rawText: String           // OCR 提取的原始文字（Vision framework）
+    var nextCheckupDate: Date?    // 建议下次复查日期（由 AI 解读或用户手动设置）
     var createdAt: Date
 
     var member: Member?
@@ -29,6 +30,7 @@ final class CheckupReport {
         self.abnormalItems = []
         self.attachmentPaths = []
         self.rawText = ""
+        self.nextCheckupDate = nil
         self.createdAt = Date()
     }
 

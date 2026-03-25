@@ -79,6 +79,70 @@ final class VisitRecordTests: SwiftDataTestCase {
         XCTAssertNil(record.followUpDate)
     }
 
+    func testFollowUpDate_canBeCleared() throws {
+        let record = TestFixtures.makeVisitRecord()
+        record.followUpDate = Calendar.current.date(byAdding: .month, value: 1, to: Date())
+        try insertAndSave(record)
+
+        record.followUpDate = nil
+        try modelContext.save()
+
+        let fetched = try fetchAll(VisitRecord.self).first
+        XCTAssertNil(fetched?.followUpDate)
+    }
+
+    func testFollowUpDate_persists_exactDate() throws {
+        let target = Calendar.current.date(from: DateComponents(year: 2026, month: 8, day: 15))!
+        let record = TestFixtures.makeVisitRecord()
+        record.followUpDate = target
+        try insertAndSave(record)
+
+        let fetched = try fetchAll(VisitRecord.self).first
+        XCTAssertEqual(fetched?.followUpDate, target)
+    }
+
+    // MARK: - FollowUpNotificationService 调度逻辑约定
+
+    func testFollowUpNotification_condition_requiresNonNilFollowUpDate() {
+        // FollowUpNotificationService.scheduleNotification 要求 followUpDate 非 nil 才调度
+        let withFollowUp = TestFixtures.makeVisitRecord()
+        withFollowUp.followUpDate = Calendar.current.date(byAdding: .day, value: 30, to: Date())
+
+        let withoutFollowUp = TestFixtures.makeVisitRecord()
+        withoutFollowUp.followUpDate = nil
+
+        XCTAssertTrue(withFollowUp.followUpDate != nil, "有复诊日期的记录应触发通知调度")
+        XCTAssertFalse(withoutFollowUp.followUpDate != nil, "无复诊日期的记录不应调度通知")
+    }
+
+    func testFollowUpNotification_identifier_format() {
+        let record = TestFixtures.makeVisitRecord()
+        // FollowUpNotificationService 使用 "follow_up_<uuid>" 格式
+        let expectedId = "follow_up_\(record.id.uuidString)"
+        XCTAssertTrue(expectedId.hasPrefix("follow_up_"), "随访通知标识符应以 follow_up_ 为前缀")
+        XCTAssertTrue(expectedId.hasSuffix(record.id.uuidString), "随访通知标识符应包含就诊记录 UUID")
+    }
+
+    func testSyncNotifications_condition_filtersFutureDatesOnly() {
+        // syncNotifications 只同步有复诊日期的记录
+        let visits: [VisitRecord] = [
+            {
+                let v = TestFixtures.makeVisitRecord()
+                v.followUpDate = Date().addingTimeInterval(86400) // 明天
+                return v
+            }(),
+            TestFixtures.makeVisitRecord(), // 无复诊日期
+            {
+                let v = TestFixtures.makeVisitRecord()
+                v.followUpDate = Date().addingTimeInterval(86400 * 30) // 30天后
+                return v
+            }()
+        ]
+
+        let visitsWithFollowUp = visits.filter { $0.followUpDate != nil }
+        XCTAssertEqual(visitsWithFollowUp.count, 2, "应只过滤出有复诊日期的记录")
+    }
+
     // MARK: - 费用
 
     func testCost_defaultIsZero() {

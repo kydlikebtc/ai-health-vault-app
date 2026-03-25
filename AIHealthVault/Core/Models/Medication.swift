@@ -35,6 +35,10 @@ final class Medication {
     var purpose: String         // 用途说明
     var sideEffects: String     // 已知副作用
     var isActive: Bool          // 是否当前在服用
+    var reminderEnabled: Bool   // 是否开启用药提醒
+    var reminderMorning: Bool   // 早（08:00）提醒
+    var reminderNoon: Bool      // 中（12:00）提醒
+    var reminderEvening: Bool   // 晚（20:00）提醒
     var createdAt: Date
 
     var member: Member?
@@ -55,6 +59,10 @@ final class Medication {
         self.purpose = ""
         self.sideEffects = ""
         self.isActive = true
+        self.reminderEnabled = false
+        self.reminderMorning = true
+        self.reminderNoon = false
+        self.reminderEvening = false
         self.createdAt = Date()
     }
 

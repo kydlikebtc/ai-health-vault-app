@@ -83,6 +83,67 @@ actor FollowUpNotificationService {
         }
     }
 
+    // MARK: - 体检复查提醒
+
+    /// 为体检报告的建议复查日期调度本地通知
+    func scheduleCheckupNotification(for checkup: CheckupReport, memberName: String) async {
+        guard let nextDate = checkup.nextCheckupDate, nextDate > Date() else { return }
+        guard await checkAuthorization() else { return }
+
+        // 提前 3 天提醒（09:00）
+        guard let notifyDate = Calendar.current.date(byAdding: .day, value: -3, to: nextDate) else { return }
+        var components = Calendar.current.dateComponents([.year, .month, .day], from: notifyDate)
+        components.hour = 9
+        components.minute = 0
+
+        let content = UNMutableNotificationContent()
+        content.title = "建议复查提醒"
+        let title = checkup.reportTitle.isEmpty ? "体检" : checkup.reportTitle
+        content.body = "\(memberName) 的「\(title)」建议复查日期还有 3 天"
+        if !checkup.hospitalName.isEmpty {
+            content.body += "（\(checkup.hospitalName)）"
+        }
+        content.sound = .default
+        content.categoryIdentifier = "FOLLOW_UP_REMINDER"
+
+        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+        let identifier = "checkup_\(checkup.id.uuidString)"
+        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
+        try? await UNUserNotificationCenter.current().add(request)
+    }
+
+    /// 取消指定体检记录的提醒
+    func cancelCheckupNotification(for checkupId: UUID) {
+        UNUserNotificationCenter.current()
+            .removePendingNotificationRequests(withIdentifiers: ["checkup_\(checkupId.uuidString)"])
+    }
+
+    // MARK: - 自定义提醒
+
+    /// 为自定义提醒调度本地通知
+    func scheduleCustomReminder(_ reminder: CustomReminder, memberName: String) async {
+        guard reminder.reminderDate > Date() else { return }
+        guard await checkAuthorization() else { return }
+
+        let content = UNMutableNotificationContent()
+        content.title = reminder.title
+        content.body = reminder.notes.isEmpty ? "\(memberName) 的健康提醒" : reminder.notes
+        content.sound = .default
+        content.categoryIdentifier = "FOLLOW_UP_REMINDER"
+
+        let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: reminder.reminderDate)
+        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+        let identifier = "custom_\(reminder.id.uuidString)"
+        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
+        try? await UNUserNotificationCenter.current().add(request)
+    }
+
+    /// 取消自定义提醒通知
+    func cancelCustomReminder(for reminderId: UUID) {
+        UNUserNotificationCenter.current()
+            .removePendingNotificationRequests(withIdentifiers: ["custom_\(reminderId.uuidString)"])
+    }
+
     // MARK: - 权限检查
 
     private func checkAuthorization() async -> Bool {

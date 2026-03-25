@@ -172,6 +172,31 @@ struct MedicationDetailView: View {
                     }
                 }
 
+                // 提醒状态卡片
+                DetailCard {
+                    HStack {
+                        Label("用药提醒", systemImage: medication.reminderEnabled ? "bell.fill" : "bell.slash")
+                            .font(.subheadline.bold())
+                            .foregroundStyle(medication.reminderEnabled ? .orange : .secondary)
+                        Spacer()
+                        Text(medication.reminderEnabled ? "已开启" : "未开启")
+                            .font(.caption)
+                            .foregroundStyle(medication.reminderEnabled ? .orange : .secondary)
+                    }
+                    if medication.reminderEnabled {
+                        let slots = [
+                            (medication.reminderMorning, "早 08:00"),
+                            (medication.reminderNoon,    "中 12:00"),
+                            (medication.reminderEvening, "晚 20:00"),
+                        ].filter(\.0).map(\.1)
+                        if !slots.isEmpty {
+                            Text(slots.joined(separator: "  ·  "))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
                 if !medication.sideEffects.isEmpty {
                     DetailCard {
                         VStack(alignment: .leading, spacing: 4) {
@@ -218,6 +243,10 @@ struct AddEditMedicationView: View {
     @State private var purpose = ""
     @State private var sideEffects = ""
     @State private var isActive = true
+    @State private var reminderEnabled = false
+    @State private var reminderMorning = true
+    @State private var reminderNoon    = false
+    @State private var reminderEvening = false
     @State private var showingValidationError = false
 
     init(member: Member, medication: Medication? = nil) {
@@ -248,6 +277,9 @@ struct AddEditMedicationView: View {
                             Text(f.displayName).tag(f)
                         }
                     }
+                    .onChange(of: frequency) { _, newFreq in
+                        applyDefaultReminderSlots(for: newFreq)
+                    }
                 }
 
                 Section("时间") {
@@ -257,6 +289,28 @@ struct AddEditMedicationView: View {
                         DatePicker("结束日期", selection: $endDate, in: startDate..., displayedComponents: .date)
                     }
                     Toggle("当前在服用", isOn: $isActive)
+                }
+
+                // 提醒设置（按需服药不支持自动提醒）
+                if frequency != .asNeeded {
+                    Section {
+                        Toggle(isOn: $reminderEnabled) {
+                            Label("开启用药提醒", systemImage: "bell")
+                        }
+                        .tint(.orange)
+
+                        if reminderEnabled {
+                            Toggle("早（08:00）", isOn: $reminderMorning)
+                            Toggle("中（12:00）", isOn: $reminderNoon)
+                            Toggle("晚（20:00）", isOn: $reminderEvening)
+                        }
+                    } header: {
+                        Text("提醒设置")
+                    } footer: {
+                        if reminderEnabled {
+                            Text("系统将在选定时间推送本地通知，通知中可标记"已服用"。")
+                        }
+                    }
                 }
 
                 Section("医疗信息") {
@@ -316,6 +370,18 @@ struct AddEditMedicationView: View {
         purpose = m.purpose
         sideEffects = m.sideEffects
         isActive = m.isActive
+        reminderEnabled = m.reminderEnabled
+        reminderMorning = m.reminderMorning
+        reminderNoon = m.reminderNoon
+        reminderEvening = m.reminderEvening
+    }
+
+    /// 切换频率时重置为该频率的默认提醒时段
+    private func applyDefaultReminderSlots(for freq: MedicationFrequency) {
+        let defaults = ReminderSlot.defaults(for: freq)
+        reminderMorning = defaults.contains(.morning)
+        reminderNoon    = defaults.contains(.noon)
+        reminderEvening = defaults.contains(.evening)
     }
 
     private func saveAction() {
@@ -324,6 +390,7 @@ struct AddEditMedicationView: View {
             showingValidationError = true
             return
         }
+        let target: Medication
         if let m = medication {
             m.name = trimmed
             m.dosage = dosage.trimmingCharacters(in: .whitespaces)
@@ -334,6 +401,11 @@ struct AddEditMedicationView: View {
             m.purpose = purpose.trimmingCharacters(in: .whitespaces)
             m.sideEffects = sideEffects.trimmingCharacters(in: .whitespaces)
             m.isActive = isActive
+            m.reminderEnabled = reminderEnabled
+            m.reminderMorning = reminderMorning
+            m.reminderNoon = reminderNoon
+            m.reminderEvening = reminderEvening
+            target = m
         } else {
             let newMed = Medication(
                 name: trimmed,
@@ -346,9 +418,27 @@ struct AddEditMedicationView: View {
             newMed.purpose = purpose.trimmingCharacters(in: .whitespaces)
             newMed.sideEffects = sideEffects.trimmingCharacters(in: .whitespaces)
             newMed.isActive = isActive
+            newMed.reminderEnabled = reminderEnabled
+            newMed.reminderMorning = reminderMorning
+            newMed.reminderNoon = reminderNoon
+            newMed.reminderEvening = reminderEvening
             newMed.member = member
             modelContext.insert(newMed)
+            target = newMed
         }
+
+        // 异步调度或取消通知
+        let memberName = member.name
+        Task {
+            if target.reminderEnabled && target.isActive {
+                await MedicationNotificationService.shared.scheduleReminders(
+                    for: target, memberName: memberName
+                )
+            } else {
+                await MedicationNotificationService.shared.cancelReminders(for: target.id)
+            }
+        }
+
         dismiss()
     }
 }

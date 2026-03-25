@@ -119,4 +119,14 @@ enum TestFixtures {
     static func makeFamily(name: String = "我的家庭") -> Family {
         Family(name: name)
     }
+
+    // MARK: - CustomReminder
+
+    static func makeCustomReminder(
+        title: String = "复诊提醒",
+        reminderDate: Date = Calendar.current.date(from: DateComponents(year: 2026, month: 4, day: 1, hour: 9))!,
+        notes: String = "别忘记带化验单"
+    ) -> CustomReminder {
+        CustomReminder(title: title, reminderDate: reminderDate, notes: notes)
+    }
 }
