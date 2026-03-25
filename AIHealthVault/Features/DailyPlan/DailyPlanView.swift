@@ -49,6 +49,7 @@ struct DailyPlanCard: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
+            .accessibilityLabel("查看历史计划")
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -256,6 +257,7 @@ struct DailyPlanDetailView: View {
                 Image(systemName: done ? "checkmark.circle.fill" : "circle")
                     .font(.title3)
                     .foregroundStyle(done ? .green : .secondary)
+                    .accessibilityHidden(true)
                 Label(actionLabels[key] ?? key,
                       systemImage: actionIcons[key] ?? "checkmark")
                     .font(.subheadline)
@@ -267,6 +269,7 @@ struct DailyPlanDetailView: View {
             .padding(.vertical, 8)
         }
         .buttonStyle(.plain)
+        .accessibilityValue(done ? "已完成" : "未完成")
     }
 }
 

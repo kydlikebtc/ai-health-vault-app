@@ -66,6 +66,7 @@ struct VisitListView: View {
                 Button { showingAdd = true } label: {
                     Image(systemName: "plus")
                 }
+                .accessibilityLabel("添加就医记录")
             }
         }
         .sheet(isPresented: $showingAdd) {
@@ -96,6 +97,7 @@ struct VisitRow: View {
                 Spacer()
                 HStack(spacing: 4) {
                     Image(systemName: visit.visitType.icon)
+                        .accessibilityHidden(true)
                     Text(visit.visitType.displayName)
                 }
                 .font(.caption)
@@ -145,6 +147,7 @@ struct VisitDetailView: View {
                         VStack(alignment: .trailing, spacing: 4) {
                             HStack(spacing: 4) {
                                 Image(systemName: visit.visitType.icon)
+                                    .accessibilityHidden(true)
                                 Text(visit.visitType.displayName)
                             }
                             .font(.caption)

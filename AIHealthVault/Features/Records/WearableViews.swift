@@ -118,6 +118,7 @@ struct WearableListView: View {
                     Button { showingAdd = true } label: {
                         Image(systemName: "plus")
                     }
+                    .accessibilityLabel("添加体征数据")
                 }
             }
         }

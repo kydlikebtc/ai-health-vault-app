@@ -64,6 +64,7 @@ struct DailyLogListView: View {
                 Button { showingAdd = true } label: {
                     Image(systemName: "plus")
                 }
+                .accessibilityLabel("添加日志")
             }
         }
         .sheet(isPresented: $showingAdd) {
@@ -91,6 +92,7 @@ struct DailyLogRow: View {
             Text(log.mood.emoji)
                 .font(.title2)
                 .frame(width: 36)
+                .accessibilityLabel(log.mood.displayName)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(log.date.localizedDateString)
@@ -242,6 +244,7 @@ struct MetricTile: View {
                 .foregroundStyle(color)
                 .frame(width: 36, height: 36)
                 .background(color.opacity(0.12), in: Circle())
+                .accessibilityHidden(true)
 
             Text(value + " " + unit)
                 .font(.subheadline.monospacedDigit().bold())
@@ -253,6 +256,8 @@ struct MetricTile: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 14)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(label)：\(value) \(unit)")
     }
 }
 

@@ -36,6 +36,7 @@ struct FamilyListView: View {
                     } label: {
                         Image(systemName: "person.badge.plus")
                     }
+                    .accessibilityLabel("添加家庭成员")
                 }
             }
             .sheet(isPresented: $showingAddMember) {

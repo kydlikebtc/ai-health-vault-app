@@ -99,12 +99,14 @@ struct FollowUpCalendarView: View {
                         } label: {
                             Image(systemName: "plus.circle")
                         }
+                        .accessibilityLabel("添加随访提醒")
                         Button {
                             Task { await requestNotifications() }
                         } label: {
                             Image(systemName: notificationGranted ? "bell.fill" : "bell.slash")
                                 .foregroundStyle(notificationGranted ? .orange : .secondary)
                         }
+                        .accessibilityLabel(notificationGranted ? "通知已开启" : "开启通知权限")
                     }
                 }
             }

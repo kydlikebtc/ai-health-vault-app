@@ -66,6 +66,7 @@ struct CheckupListView: View {
                 Button { showingAdd = true } label: {
                     Image(systemName: "plus")
                 }
+                .accessibilityLabel("添加体检报告")
             }
         }
         .sheet(isPresented: $showingAdd) {

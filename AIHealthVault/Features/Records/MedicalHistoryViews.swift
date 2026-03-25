@@ -65,6 +65,7 @@ struct MedicalHistoryListView: View {
                 Button { showingAdd = true } label: {
                     Image(systemName: "plus")
                 }
+                .accessibilityLabel("添加病史")
             }
         }
         .sheet(isPresented: $showingAdd) {
