@@ -92,8 +92,10 @@ struct AddEditMemberView: View {
                             .font(.title3)
                             .foregroundStyle(.white, .blue)
                             .offset(x: 4, y: 4)
+                            .accessibilityHidden(true)
                     }
                 }
+                .accessibilityLabel("选择头像")
                 Spacer()
             }
             .listRowBackground(Color.clear)

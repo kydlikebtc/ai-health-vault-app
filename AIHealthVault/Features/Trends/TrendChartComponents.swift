@@ -39,6 +39,7 @@ struct TrendChartSection<ChartContent: View>: View {
             HStack(spacing: 8) {
                 Image(systemName: icon)
                     .foregroundStyle(color)
+                    .accessibilityHidden(true)
                 Text(title)
                     .font(.headline)
                 Spacer()
@@ -63,6 +64,7 @@ struct TrendChartSection<ChartContent: View>: View {
                 Image(systemName: "chart.line.downtrend.xyaxis")
                     .font(.title2)
                     .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
                 Text("暂无数据")
                     .font(.caption)
                     .foregroundStyle(.secondary)

@@ -49,6 +49,7 @@ struct RecordsView: View {
             HStack {
                 Text(selectedMember?.name ?? "选择成员")
                 Image(systemName: "chevron.down")
+                    .accessibilityHidden(true)
             }
             .font(.subheadline)
         }

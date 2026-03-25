@@ -77,6 +77,7 @@ struct VisitPreparationView: View {
                             .scaleEffect(0.85)
                     } else {
                         Image(systemName: "sparkles")
+                            .accessibilityHidden(true)
                     }
                     Text(viewModel.phase == .generating ? "生成中…" : "生成就诊清单")
                         .fontWeight(.semibold)
@@ -193,6 +194,7 @@ struct VisitPreparationView: View {
         HStack(spacing: 10) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(.red)
+                .accessibilityHidden(true)
             Text(message)
                 .font(.subheadline)
                 .foregroundStyle(.red)
@@ -234,6 +236,7 @@ struct VisitPreparationView: View {
             } label: {
                 HStack {
                     Image(systemName: "square.and.arrow.down")
+                        .accessibilityHidden(true)
                     Text("保存就诊记录")
                         .fontWeight(.semibold)
                 }

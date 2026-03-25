@@ -161,6 +161,7 @@ struct HealthTodaySummaryCard: View {
             HStack {
                 Image(systemName: "heart.text.square.fill")
                     .foregroundStyle(.red)
+                    .accessibilityHidden(true)
                 Text("健康摘要")
                     .font(.headline)
                 Spacer()
@@ -213,6 +214,7 @@ struct SummaryMetricTile: View {
                 .font(.title3)
                 .foregroundStyle(isAbnormal ? .red : entry.metricType.tileColor)
                 .frame(width: 28)
+                .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.metricType.displayName)
@@ -228,6 +230,7 @@ struct SummaryMetricTile: View {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .font(.caption2)
                             .foregroundStyle(.red)
+                            .accessibilityHidden(true)
                     }
                 }
 

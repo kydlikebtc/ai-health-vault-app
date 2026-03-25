@@ -139,6 +139,7 @@ struct FollowUpCalendarView: View {
             } label: {
                 Image(systemName: "chevron.left").font(.title3)
             }
+            .accessibilityLabel("上月")
             Spacer()
             Text(selectedMonth, format: .dateTime.year().month(.wide))
                 .font(.headline)
@@ -148,6 +149,7 @@ struct FollowUpCalendarView: View {
             } label: {
                 Image(systemName: "chevron.right").font(.title3)
             }
+            .accessibilityLabel("下月")
         }
     }
 
@@ -266,6 +268,7 @@ private struct CalendarItemRow: View {
             .font(.title3)
             .foregroundStyle(color)
             .frame(width: 28)
+            .accessibilityHidden(true)
     }
 
     private var memberLabel: some View {

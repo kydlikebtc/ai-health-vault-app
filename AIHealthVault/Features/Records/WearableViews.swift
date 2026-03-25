@@ -95,6 +95,7 @@ struct WearableListView: View {
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "line.3.horizontal.decrease.circle")
+                            .accessibilityHidden(true)
                         Text(selectedMetricType?.displayName ?? "筛选")
                             .font(.subheadline)
                     }
