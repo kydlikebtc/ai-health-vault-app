@@ -105,6 +105,7 @@ struct AIView: View {
                     Image(systemName: "key.fill")
                         .font(.title2)
                         .foregroundStyle(.orange)
+                        .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("配置 API Key 以启用 AI")
                             .font(.headline)
@@ -116,6 +117,7 @@ struct AIView: View {
                     Spacer()
                     Image(systemName: "chevron.right")
                         .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
                 }
                 .padding()
                 .background(.orange.opacity(0.08))
@@ -128,6 +130,7 @@ struct AIView: View {
                 Image(systemName: "brain.head.profile")
                     .font(.title2)
                     .foregroundStyle(.purple)
+                    .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Claude AI 已就绪")
                         .font(.headline)
@@ -157,6 +160,7 @@ struct AIFeatureCard: View {
                     Image(systemName: feature.icon)
                         .font(.title2)
                         .foregroundStyle(feature.color)
+                        .accessibilityHidden(true)
                     Spacer()
                     if isAvailable {
                         Text("已上线")
@@ -285,6 +289,7 @@ struct AIConversationView: View {
                     .font(.title2)
                     .foregroundStyle(isStreaming ? .red : (userInput.isEmpty ? .secondary : feature.color))
             }
+            .accessibilityLabel(isStreaming ? "停止生成" : "发送")
             .disabled(!isStreaming && userInput.trimmingCharacters(in: .whitespaces).isEmpty)
         }
         .padding(.horizontal)
@@ -361,7 +366,8 @@ private struct StreamingBubble: View {
                     ForEach(0..<3, id: \.self) { _ in
                         Circle().frame(width: 6, height: 6).foregroundStyle(.secondary).opacity(0.6)
                     }
-                })
+                }
+                .accessibilityLabel("AI 正在响应"))
                 : AnyView(Text(text))
             )
             .padding(.horizontal, 14)
@@ -378,7 +384,9 @@ private struct ErrorBubble: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red)
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.red)
+                .accessibilityHidden(true)
             Text(message).font(.caption).foregroundStyle(.red)
         }
         .padding()

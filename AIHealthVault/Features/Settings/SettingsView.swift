@@ -61,6 +61,7 @@ struct SettingsView: View {
                         Image(systemName: "chevron.right")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
                     }
                 }
                 .foregroundStyle(.primary)
@@ -140,6 +141,7 @@ struct SettingsView: View {
                   : "iphone.slash")
                 .foregroundStyle(statusColor)
                 .frame(width: 24)
+                .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("Apple Health 连接")

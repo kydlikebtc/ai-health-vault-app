@@ -191,6 +191,7 @@ struct MemberDetailView: View {
         HStack(spacing: 4) {
             Image(systemName: icon)
                 .font(.caption2)
+                .accessibilityHidden(true)
             Text(text)
                 .font(.caption)
         }
