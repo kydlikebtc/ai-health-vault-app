@@ -24,6 +24,7 @@ class SwiftDataTestCase: XCTestCase {
             CustomReminder.self,
             TermCacheItem.self,
             DailyPlan.self,
+            CachedVisitPrep.self,
         ])
         let config = ModelConfiguration(
             schema: schema,

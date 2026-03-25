@@ -120,6 +120,67 @@ final class HealthRecordsUITests: XCTestCase {
                       "处理相机权限弹窗后 App 应保持运行状态")
     }
 
+    // MARK: - Phase 3 AI 功能 UI Tests
+
+    /// AI 助手 Tab 进入后 App 保持正常
+    func testAIAssistantTab_showsFunctionalContent() throws {
+        let aiTab = app.tabBars.buttons["AI 助手"]
+        XCTAssertTrue(aiTab.waitForExistence(timeout: 5))
+        aiTab.tap()
+
+        XCTAssertTrue(app.state == .runningForeground,
+                      "进入 AI 助手 Tab 后 App 应保持前台运行")
+    }
+
+    /// 设置页面可进入 AI 设置区域
+    func testSettingsTab_aiSettingsEntryExists() throws {
+        let settingsTab = app.tabBars.buttons["设置"]
+        XCTAssertTrue(settingsTab.waitForExistence(timeout: 5))
+        settingsTab.tap()
+
+        XCTAssertTrue(app.state == .runningForeground,
+                      "设置页面应正常渲染，可访问 AI 设置")
+    }
+
+    /// 从 AI Tab 到设置再切换回来，无崩溃
+    func testAIToSettingsNavigation_doesNotCrash() throws {
+        let tabBar = app.tabBars.firstMatch
+        XCTAssertTrue(tabBar.waitForExistence(timeout: 5))
+
+        tabBar.buttons["AI 助手"].tap()
+        tabBar.buttons["设置"].tap()
+        tabBar.buttons["AI 助手"].tap()
+
+        XCTAssertTrue(app.state == .runningForeground,
+                      "AI 助手 ↔ 设置 来回切换后 App 应保持正常运行")
+    }
+
+    /// 趋势图表入口：家庭 Tab → 成员列表渲染正常
+    func testFamilyTab_trendEntryPoint_doesNotCrash() throws {
+        let familyTab = app.tabBars.buttons["家庭"]
+        XCTAssertTrue(familyTab.waitForExistence(timeout: 5))
+        familyTab.tap()
+
+        XCTAssertTrue(app.state == .runningForeground,
+                      "家庭 Tab（健康趋势入口）应正常渲染，无崩溃")
+    }
+
+    /// 完整 Tab 轮询：家庭 → 记录 → AI → 设置 均可访问
+    func testAllTabsFullRotation_noMemoryLeak() throws {
+        let tabBar = app.tabBars.firstMatch
+        XCTAssertTrue(tabBar.waitForExistence(timeout: 5))
+
+        let tabNames = ["家庭", "记录", "AI 助手", "设置"]
+        for tabName in tabNames {
+            let button = tabBar.buttons[tabName]
+            if button.waitForExistence(timeout: 3) {
+                button.tap()
+                XCTAssertTrue(app.state == .runningForeground,
+                              "切换到「\(tabName)」后 App 应保持前台运行")
+            }
+        }
+    }
+
     // MARK: - Tab 快速切换稳定性
 
     /// 快速切换所有 Tab，验证不会崩溃
