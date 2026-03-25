@@ -120,6 +120,25 @@ enum TestFixtures {
         Family(name: name)
     }
 
+    // MARK: - TermCacheItem
+
+    static func makeTermCacheItem(
+        term: String = "血糖",
+        explanation: String = "血液中葡萄糖的浓度，正常空腹值为 3.9-6.1 mmol/L",
+        language: String = "zh"
+    ) -> TermCacheItem {
+        TermCacheItem(term: term, explanation: explanation, language: language)
+    }
+
+    // MARK: - DailyPlan
+
+    static func makeDailyPlan(
+        content: String = "## 今日健康计划\n- 步行 30 分钟\n- 多喝水\n- 按时服药",
+        planDate: Date = Date()
+    ) -> DailyPlan {
+        DailyPlan(planDate: planDate, content: content)
+    }
+
     // MARK: - CustomReminder
 
     static func makeCustomReminder(

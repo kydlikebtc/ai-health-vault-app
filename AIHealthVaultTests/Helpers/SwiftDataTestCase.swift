@@ -22,6 +22,8 @@ class SwiftDataTestCase: XCTestCase {
             WearableEntry.self,
             DailyLog.self,
             CustomReminder.self,
+            TermCacheItem.self,
+            DailyPlan.self,
         ])
         let config = ModelConfiguration(
             schema: schema,
