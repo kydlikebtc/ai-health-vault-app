@@ -97,12 +97,12 @@ final class ImageStorageServiceTests: XCTestCase {
     func testLoadImage_returnsImageAfterSave() async throws {
         let original = makeSolidImage(.blue)
         let path = try await service.save(image: original, for: testReportId)
-        let loaded = await service.loadImage(at: path)
+        let loaded = service.loadImage(at: path)
         XCTAssertNotNil(loaded, "应能从已存储路径读取图片")
     }
 
-    func testLoadImage_returnsNilForInvalidPath() async {
-        let result = await service.loadImage(at: "/invalid/nonexistent/path.jpg")
+    func testLoadImage_returnsNilForInvalidPath() {
+        let result = service.loadImage(at: "/invalid/nonexistent/path.jpg")
         XCTAssertNil(result, "不存在的路径应返回 nil")
     }
 
@@ -111,7 +111,7 @@ final class ImageStorageServiceTests: XCTestCase {
     func testLoadThumbnail_returnsImageAfterSave() async throws {
         let image = makeSolidImage()
         let path = try await service.save(image: image, for: testReportId)
-        let thumb = await service.loadThumbnail(for: path)
+        let thumb = service.loadThumbnail(for: path)
         XCTAssertNotNil(thumb, "应能从已存储路径读取缩略图")
     }
 
@@ -124,7 +124,7 @@ final class ImageStorageServiceTests: XCTestCase {
         let thumbPath = "\(base)_thumb.\(ext)"
         try? FileManager.default.removeItem(atPath: thumbPath)
 
-        let result = await service.loadThumbnail(for: path)
+        let result = service.loadThumbnail(for: path)
         XCTAssertNotNil(result, "缩略图不存在时应回退到原图，仍应返回非 nil")
     }
 
@@ -200,31 +200,31 @@ final class ImageStorageServiceTests: XCTestCase {
 
     // MARK: - blurScore 模糊度评分测试
 
-    func testBlurScore_sharpImageReturnsPositiveScore() async {
+    func testBlurScore_sharpImageReturnsPositiveScore() {
         let sharp = makeSharpImage()
-        let score = await service.blurScore(of: sharp)
+        let score = service.blurScore(of: sharp)
         XCTAssertGreaterThan(score, 0.0, "高对比度图片的模糊评分应 > 0")
     }
 
-    func testBlurScore_scoreIsBetweenZeroAndOne() async {
+    func testBlurScore_scoreIsBetweenZeroAndOne() {
         let image = makeSharpImage()
-        let score = await service.blurScore(of: image)
+        let score = service.blurScore(of: image)
         XCTAssertGreaterThanOrEqual(score, 0.0, "模糊评分下限为 0")
         XCTAssertLessThanOrEqual(score, 1.0, "模糊评分上限为 1")
     }
 
     // MARK: - isAcceptableQuality 质量判断测试
 
-    func testIsAcceptableQuality_sharpImageReturnsTrue() async {
+    func testIsAcceptableQuality_sharpImageReturnsTrue() {
         let sharp = makeSharpImage()
-        let acceptable = await service.isAcceptableQuality(sharp)
+        let acceptable = service.isAcceptableQuality(sharp)
         XCTAssertTrue(acceptable, "高对比度图片应通过质量检测")
     }
 
-    func testIsAcceptableQuality_solidColorImageReturnsFalse() async {
+    func testIsAcceptableQuality_solidColorImageReturnsFalse() {
         // 纯色图片无边缘，评分极低，应判定为质量不可接受
         let solid = makeSolidImage(color: .gray)
-        let acceptable = await service.isAcceptableQuality(solid)
+        let acceptable = service.isAcceptableQuality(solid)
         XCTAssertFalse(acceptable, "纯灰色图片（无边缘）应判定质量不可接受")
     }
 
