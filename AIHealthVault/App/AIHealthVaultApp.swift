@@ -17,6 +17,8 @@ struct AIHealthVaultApp: App {
             VisitRecord.self,
             WearableEntry.self,
             DailyLog.self,
+            TermCacheItem.self,
+            CachedVisitPrep.self,
         ])
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do {

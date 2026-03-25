@@ -79,6 +79,8 @@ struct AIView: View {
                 TrendMemberPickerView()
             } else if feature == .reportAnalysis {
                 ReportAnalysisMemberPickerView()
+            } else if feature == .visitPrep {
+                VisitPrepMemberPickerView()
             } else if feature.usesClaude {
                 let service: any AIService = (aiMgr.isAPIKeyConfigured && aiMgr.isAIEnabled)
                     ? ClaudeService()

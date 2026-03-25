@@ -109,4 +109,10 @@ extension MockAIService {
         """
         return mock
     }
+
+    static func termExplanationMock() -> MockAIService {
+        let mock = MockAIService()
+        mock.mockResponse = "该术语是一项常见的医学检测指标。正常范围因年龄和性别有所差异，建议结合报告中的参考值范围和您的整体健康状况进行综合判断。如指标偏高或偏低，通常需要配合饮食调整或复查，具体处理请咨询医生。"
+        return mock
+    }
 }
