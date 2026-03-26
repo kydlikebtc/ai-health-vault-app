@@ -14,6 +14,8 @@ struct AIHealthVaultApp: App {
 
     /// 持有 Transaction.updates 监听任务，防止被提前释放
     @State private var transactionListenerTask: Task<Void, Never>?
+    /// 是否展示首次启动引导（Onboarding）
+    @State private var showOnboarding: Bool = !UserDefaults.standard.bool(forKey: OnboardingView.hasSeenOnboardingKey)
 
     /// SwiftData ModelContainer — 包含所有健康数据模型
     private let modelContainer: ModelContainer = {
@@ -53,6 +55,10 @@ struct AIHealthVaultApp: App {
                     .modelContainer(modelContainer)
                     .environmentObject(authService)
                     .environmentObject(healthKitService)
+                    .sheet(isPresented: $showOnboarding) {
+                        OnboardingView()
+                            .interactiveDismissDisabled(false)
+                    }
                     .task {
                         // 设置通知 delegate，使前台也能展示 banner
                         UNUserNotificationCenter.current().delegate = notificationDelegate
@@ -60,6 +66,9 @@ struct AIHealthVaultApp: App {
                         // 启动 StoreKit 2 Transaction.updates 监听（App 生命周期内持续运行）
                         transactionListenerTask = SubscriptionManager.shared.startTransactionListener()
                         appLogger.info("Transaction.updates 监听已启动")
+
+                        // 刷新订阅状态后，调度试用到期通知
+                        await SubscriptionManager.shared.scheduleTrialExpiryNotificationIfNeeded()
 
                         // App 启动时请求授权（若尚未授权）
                         if healthKitService.isAvailable &&

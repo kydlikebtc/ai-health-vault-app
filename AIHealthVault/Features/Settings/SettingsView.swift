@@ -105,16 +105,25 @@ struct SettingsView: View {
                     set: { aiMgr.isAIEnabled = $0 }
                 ))
 
-                if aiMgr.isAPIKeyConfigured {
-                    LabeledContent("本月用量", value: "\(aiMgr.monthlyTotalTokens) tokens")
+                // 服务端代理模式：展示 AI 服务模式和调用上限
+                if aiMgr.serviceMode == .serverProxy && subManager.isPremiumActive {
+                    LabeledContent("AI 模式", value: "服务端代理")
+                    LabeledContent("本月调用上限", value: "50 次")
+                } else if aiMgr.serviceMode == .byok && aiMgr.isAPIKeyConfigured {
+                    LabeledContent("AI 模式", value: "BYOK")
+                    LabeledContent("本月 Token 用量", value: "\(aiMgr.monthlyTotalTokens)")
                     LabeledContent("预估费用", value: aiMgr.estimatedMonthlyCostDisplay)
                 }
             } header: {
                 Text("AI 助手")
             } footer: {
                 let aiMgr = AISettingsManager.shared
-                if !aiMgr.isAPIKeyConfigured {
-                    Text("未配置 API Key，AI 功能不可用。请点击上方进行配置。")
+                if !aiMgr.isAIAvailable {
+                    if aiMgr.serviceMode == .serverProxy {
+                        Text("需要 Premium 订阅才能使用 AI 功能。请升级订阅或在 AI 配置中切换为 BYOK 模式。")
+                    } else {
+                        Text("未配置 API Key，AI 功能不可用。请点击上方进行配置。")
+                    }
                 }
             }
 

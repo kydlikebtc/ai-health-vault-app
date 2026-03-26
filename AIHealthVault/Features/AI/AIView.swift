@@ -82,9 +82,9 @@ struct AIView: View {
             } else if feature == .visitPrep {
                 VisitPrepMemberPickerView()
             } else if feature.usesClaude {
-                let service: any AIService = (aiMgr.isAPIKeyConfigured && aiMgr.isAIEnabled)
-                    ? ClaudeService()
-                    : AIView.previewMock(for: feature)
+                let service: any AIService = aiMgr.makeAIService(
+                    mockFallback: AIView.previewMock(for: feature)
+                )
                 AIConversationView(feature: feature, aiService: service)
             } else {
                 AIFeaturePlaceholderView(feature: feature)
@@ -112,15 +112,15 @@ struct AIView: View {
 
     @ViewBuilder
     private var statusBanner: some View {
-        if !aiMgr.isAPIKeyConfigured {
+        if !aiMgr.isAIAvailable {
             Button { showAPIKeySetup = true } label: {
                 HStack(spacing: 12) {
-                    Image(systemName: "key.fill")
+                    Image(systemName: aiMgr.serviceMode == .serverProxy ? "lock.fill" : "key.fill")
                         .font(.title2)
                         .foregroundStyle(.orange)
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("配置 API Key 以启用 AI")
+                        Text(aiMgr.serviceMode == .serverProxy ? "需要 Premium 订阅以启用 AI" : "配置 API Key 以启用 AI")
                             .font(.headline)
                             .foregroundStyle(.primary)
                         Text("点击此处前往设置")

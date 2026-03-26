@@ -11,11 +11,9 @@ final class TermExplanationService {
     private let aiService: any AIService
 
     private init() {
-        if AISettingsManager.shared.isAPIKeyConfigured && AISettingsManager.shared.isAIEnabled {
-            self.aiService = ClaudeService()
-        } else {
-            self.aiService = MockAIService.termExplanationMock()
-        }
+        self.aiService = AISettingsManager.shared.makeAIService(
+            mockFallback: MockAIService.termExplanationMock()
+        )
     }
 
     func setModelContext(_ ctx: ModelContext) {

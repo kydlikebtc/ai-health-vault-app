@@ -454,10 +454,10 @@ final class ReportAnalysisViewModel {
         self.member = member
         if let provided = aiService {
             self.aiService = provided
-        } else if AISettingsManager.shared.isAPIKeyConfigured {
-            self.aiService = ClaudeService()
         } else {
-            self.aiService = MockAIService.reportAnalysisMock()
+            self.aiService = AISettingsManager.shared.makeAIService(
+                mockFallback: MockAIService.reportAnalysisMock()
+            )
         }
     }
 
@@ -467,7 +467,7 @@ final class ReportAnalysisViewModel {
         phase = .extracting
         do {
             ocrText = try await extractText(from: image)
-            if AISettingsManager.shared.isAPIKeyConfigured {
+            if AISettingsManager.shared.isAIAvailable {
                 await analyze()
             } else {
                 phase = .idle

@@ -137,9 +137,7 @@ struct DailyPlanCard: View {
         isGenerating = true
         errorMessage = nil
 
-        let aiService: any AIService = aiMgr.isAPIKeyConfigured && aiMgr.isAIEnabled
-            ? ClaudeService()
-            : MockAIService.dailyPlanMock()
+        let aiService: any AIService = aiMgr.makeAIService(mockFallback: MockAIService.dailyPlanMock())
 
         do {
             let summary: HealthKitTodaySummary? = try? await healthKitService.fetchTodaySummary()

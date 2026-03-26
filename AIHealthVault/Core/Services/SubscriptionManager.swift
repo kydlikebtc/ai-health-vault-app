@@ -1,6 +1,7 @@
 import Foundation
 import StoreKit
 import Observation
+import UserNotifications
 import os
 
 private let subLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.aihealthvault", category: "SubscriptionManager")
@@ -245,6 +246,86 @@ final class SubscriptionManager {
                     subLogger.warning("Unverified transaction update: \(error.localizedDescription)")
                 }
             }
+        }
+    }
+
+    // MARK: - Receipt Token (for AI Proxy auth)
+
+    /// 获取当前有效订阅的 StoreKit 2 JWS receipt token
+    /// 用于向 AI Proxy 服务端证明订阅有效性
+    /// - Returns: JWS 字符串（用于 Authorization: Bearer），无有效订阅时返回 nil
+    func currentReceiptToken() async -> String? {
+        for await result in Transaction.currentEntitlements {
+            guard case .verified(let transaction) = result else { continue }
+            guard transaction.productType == .autoRenewable else { continue }
+            guard !transaction.isUpgraded else { continue }
+            subLogger.debug("获取 receipt token: productID=\(transaction.productID)")
+            return transaction.jwsRepresentation
+        }
+        subLogger.warning("currentReceiptToken: 无有效订阅 entitlement")
+        return nil
+    }
+
+    // MARK: - Trial Expiry Notification
+
+    private enum NotificationIDs {
+        static let trialExpiry24h = "com.aihealthvault.trial.expiry.24h"
+    }
+
+    /// 调度 Reverse Trial 到期前 24 小时本地通知（仅当处于试用状态时）
+    func scheduleTrialExpiryNotificationIfNeeded() async {
+        guard case .reverseTrial(let daysRemaining) = subscriptionStatus else { return }
+        guard daysRemaining > 1 else {
+            // 已在最后一天，不重复调度
+            subLogger.info("试用剩余 \(daysRemaining) 天，跳过到期通知调度")
+            return
+        }
+
+        // 确保已获得通知权限
+        let center = UNUserNotificationCenter.current()
+        let settings = await center.notificationSettings()
+        guard settings.authorizationStatus == .authorized else {
+            subLogger.warning("通知未授权，跳过试用到期通知调度")
+            return
+        }
+
+        // 计算通知触发时间：安装日期 + 13 天（即最后一天的开始）
+        guard let installDate = UserDefaults.standard.object(forKey: TrialKeys.installDate) as? Date else {
+            return
+        }
+        guard let notifyDate = Calendar.current.date(
+            byAdding: .day, value: Self.reversTrialDays - 1, to: installDate
+        ) else { return }
+
+        // 避免重复调度（若通知已存在）
+        let pending = await center.pendingNotificationRequests()
+        if pending.contains(where: { $0.identifier == NotificationIDs.trialExpiry24h }) {
+            subLogger.debug("试用到期通知已存在，跳过重复调度")
+            return
+        }
+
+        let content = UNMutableNotificationContent()
+        content.title = "免费试用即将结束"
+        content.body = "您的 14 天 Premium 试用明天到期。订阅以继续使用 AI 分析、PDF 导出等全部功能。"
+        content.sound = .default
+        content.categoryIdentifier = "trial_expiry"
+
+        let components = Calendar.current.dateComponents(
+            [.year, .month, .day, .hour, .minute],
+            from: notifyDate
+        )
+        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+        let request = UNNotificationRequest(
+            identifier: NotificationIDs.trialExpiry24h,
+            content: content,
+            trigger: trigger
+        )
+
+        do {
+            try await center.add(request)
+            subLogger.info("已调度试用到期通知: triggerDate=\(notifyDate)")
+        } catch {
+            subLogger.error("调度试用到期通知失败: \(error.localizedDescription)")
         }
     }
 

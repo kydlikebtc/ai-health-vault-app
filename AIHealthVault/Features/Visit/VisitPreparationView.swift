@@ -296,10 +296,10 @@ final class VisitPreparationViewModel {
         self.member = member
         if let provided = aiService {
             self.aiService = provided
-        } else if AISettingsManager.shared.isAPIKeyConfigured && AISettingsManager.shared.isAIEnabled {
-            self.aiService = ClaudeService()
         } else {
-            self.aiService = MockAIService.visitPrepMock()
+            self.aiService = AISettingsManager.shared.makeAIService(
+                mockFallback: MockAIService.visitPrepMock()
+            )
         }
     }
 
