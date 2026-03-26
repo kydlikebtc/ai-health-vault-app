@@ -109,18 +109,93 @@ final class FeatureGatingTests: IAPTestCase {
         }
     }
 
-    // MARK: - TC-GATE-07: AI Proxy Usage Metering（依赖 AIH-44）
+    // MARK: - TC-GATE-07: AI Proxy Usage Metering（AIH-44 已完成）
 
-    /// AI Proxy 用量限制门控验证
-    /// 状态：等待 AIH-44（Cloudflare Workers AI Proxy）完成后实现
-    func testTC_GATE_07_aiProxyUsageMeteringGating() throws {
-        throw XCTSkip("TC-GATE-07 依赖 AIH-44 (AI Proxy Usage Metering API)，待 AIH-44 完成后实现")
-        // 实现计划：
-        // 1. Mock AI Proxy 响应，模拟当月已消耗 50 次
-        // 2. 验证 Free 用户：请求被 Proxy 拒绝（403 / 超限错误）
-        // 3. 验证 Premium 用户（50次内）：请求被 Proxy 放通
-        // 4. 验证 Premium 用户（超 50 次）：请求被 Proxy 限流
-        // 5. 月初重置：新月份开始后限流计数器归零
+    private let mockProxyURL = URL(string: "https://mock.proxy")!
+
+    /// TC-GATE-07-a: Free 用户无 receiptToken，Proxy 直接拒绝（subscription_required）
+    func testTC_GATE_07a_freeUserWithoutReceiptDenied() async {
+        let service = AIProxyUsageService(proxyBaseURL: mockProxyURL)
+
+        let result = await service.checkProxyAccess(receiptToken: nil)
+
+        guard case .failure(let error) = result else {
+            XCTFail("Free 用户应被 Proxy 拒绝")
+            return
+        }
+        XCTAssertEqual(error, .subscriptionRequired, "无 receiptToken 应返回 subscriptionRequired")
+    }
+
+    /// TC-GATE-07-b: Free 用户有 receiptToken 但 Proxy 返回 403
+    func testTC_GATE_07b_freeUserWith403Response() async {
+        let session = MockURLProtocol.makeSession(
+            statusCode: 403,
+            body: #"{"error":"Active Premium subscription required","code":"subscription_required"}"#
+        )
+        let service = AIProxyUsageService(proxyBaseURL: mockProxyURL, session: session)
+
+        let result = await service.checkProxyAccess(receiptToken: "free-user-token")
+
+        guard case .failure(let error) = result else {
+            XCTFail("Free 用户应被 Proxy 拒绝")
+            return
+        }
+        XCTAssertEqual(error, .subscriptionRequired)
+    }
+
+    /// TC-GATE-07-c: Premium 用户在限额内（25/50），Proxy 放通并返回用量统计
+    func testTC_GATE_07c_premiumUserWithinLimitAllowed() async {
+        let usageJSON = #"{"anonymousId":"abc123","billingMonth":"2026-03","callCount":25,"monthlyLimit":50,"remaining":25}"#
+        let session = MockURLProtocol.makeSession(statusCode: 200, body: usageJSON)
+        let service = AIProxyUsageService(proxyBaseURL: mockProxyURL, session: session)
+
+        let result = await service.checkProxyAccess(receiptToken: "premium-valid-token")
+
+        guard case .success(let stats) = result else {
+            XCTFail("Premium 用户在限额内应被放通，实际：\(result)")
+            return
+        }
+        XCTAssertEqual(stats.callCount, 25)
+        XCTAssertEqual(stats.monthlyLimit, 50)
+        XCTAssertEqual(stats.remaining, 25)
+        XCTAssertFalse(stats.isOverLimit)
+    }
+
+    /// TC-GATE-07-d: Premium 用户恰好超出限额（remaining=0），应被限流
+    func testTC_GATE_07d_premiumUserOverLimitBlocked() async {
+        let usageJSON = #"{"anonymousId":"abc123","billingMonth":"2026-03","callCount":50,"monthlyLimit":50,"remaining":0}"#
+        let session = MockURLProtocol.makeSession(statusCode: 200, body: usageJSON)
+        let service = AIProxyUsageService(proxyBaseURL: mockProxyURL, session: session)
+
+        let result = await service.checkProxyAccess(receiptToken: "premium-over-limit-token")
+
+        guard case .failure(let error) = result else {
+            XCTFail("超限用户应被限流")
+            return
+        }
+        if case .rateLimitExceeded(let current, let limit) = error {
+            XCTAssertEqual(current, 50, "当前调用次数应为 50")
+            XCTAssertEqual(limit, 50, "月度上限应为 50")
+        } else {
+            XCTFail("超限应返回 rateLimitExceeded，实际：\(error)")
+        }
+    }
+
+    /// TC-GATE-07-e: 月初重置 — 新月份 callCount=0，remaining 恢复为 monthlyLimit
+    func testTC_GATE_07e_newMonthResetsUsageQuota() async {
+        let usageJSON = #"{"anonymousId":"abc123","billingMonth":"2026-04","callCount":0,"monthlyLimit":50,"remaining":50}"#
+        let session = MockURLProtocol.makeSession(statusCode: 200, body: usageJSON)
+        let service = AIProxyUsageService(proxyBaseURL: mockProxyURL, session: session)
+
+        let result = await service.checkProxyAccess(receiptToken: "premium-new-month-token")
+
+        guard case .success(let stats) = result else {
+            XCTFail("月初重置后用户应有完整配额")
+            return
+        }
+        XCTAssertEqual(stats.callCount, 0, "月初重置后调用次数应为 0")
+        XCTAssertEqual(stats.remaining, stats.monthlyLimit, "月初重置后剩余次数应等于 monthlyLimit")
+        XCTAssertFalse(stats.isOverLimit)
     }
 
     // MARK: - 功能边界：特定 feature 验证
