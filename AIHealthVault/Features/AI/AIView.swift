@@ -84,7 +84,7 @@ struct AIView: View {
             } else if feature.usesClaude {
                 let service: any AIService = (aiMgr.isAPIKeyConfigured && aiMgr.isAIEnabled)
                     ? ClaudeService()
-                    : MockAIService.reportAnalysisMock()
+                    : AIView.previewMock(for: feature)
                 AIConversationView(feature: feature, aiService: service)
             } else {
                 AIFeaturePlaceholderView(feature: feature)
@@ -92,6 +92,19 @@ struct AIView: View {
         }
         .sheet(isPresented: $showAPIKeySetup) {
             AISettingsView()
+        }
+    }
+
+    // MARK: - Mock 分发（Preview / 无 API Key 开发调试）
+
+    /// 根据 AI 功能选择对应的 Mock 服务，使 Preview 展示与功能匹配的示例回复
+    private static func previewMock(for feature: AIFeature) -> MockAIService {
+        switch feature {
+        case .reportAnalysis: return .reportAnalysisMock()
+        case .visitPrep:      return .visitPrepMock()
+        case .medicineInfo:   return .medicineInfoMock()
+        case .healthPlan:     return .dailyPlanMock()
+        case .trendAnalysis:  return .reportAnalysisMock() // trendAnalysis 走独立图表页，不进此路径
         }
     }
 
