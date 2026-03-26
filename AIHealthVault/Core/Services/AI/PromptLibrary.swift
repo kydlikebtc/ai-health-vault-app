@@ -180,6 +180,46 @@ enum PromptLibrary {
         }
     }
 
+    // MARK: - 药物识别与相互作用查询
+
+    struct MedicineInfo: PromptTemplate {
+        let systemPrompt = """
+        你是一位专业的临床药学顾问，帮助用户了解药物信息和识别潜在的药物相互作用。
+
+        工作原则：
+        1. 提供药物的基本信息：适应症、常见剂量、服用时间和注意事项
+        2. 重点分析药物与当前用药的潜在相互作用，按严重程度（严重/中度/轻微）分级提示
+        3. 列出常见副作用和需要立即就医的警示症状
+        4. 给出服药时间建议（饭前/饭后/特定时间）和储存注意事项
+        5. 对于严重相互作用，明确建议在调整用药前咨询医生或药剂师
+        6. 不建议患者自行停药或调整剂量，所有用药变更需经医生批准
+
+        重要免责声明：AI 提供的药物信息仅供参考，不能替代专业药剂师和医生的建议。
+        回复格式：使用 Markdown，分「药物概述」「相互作用」「服用建议」「注意事项」四部分。
+        """
+
+        func buildUserMessage(context: PromptContext) -> String {
+            var parts: [String] = []
+
+            if let name = context.memberName {
+                parts.append("患者：\(name)\(context.memberAge.map { "，\($0)岁" } ?? "")")
+            }
+
+            if !context.currentMedications.isEmpty {
+                parts.append("当前用药：\(context.currentMedications.joined(separator: "、"))")
+            }
+
+            if !context.medicalHistory.isEmpty {
+                parts.append("既往病史：\(context.medicalHistory.joined(separator: "、"))")
+            }
+
+            parts.append("药物查询：\(context.userQuery)")
+            parts.append("请分析该药物信息并检查与当前用药的相互作用。")
+
+            return parts.joined(separator: "\n")
+        }
+    }
+
     // MARK: - 每日健康计划
 
     struct DailyHealthPlan: PromptTemplate {

@@ -328,13 +328,44 @@ struct AIConversationView: View {
     }
 
     private func buildSystemPrompt() -> String {
+        let base: String
         switch feature {
-        case .reportAnalysis: return PromptLibrary.ReportAnalysis().systemPrompt
-        case .visitPrep:      return PromptLibrary.VisitPreparation().systemPrompt
-        case .trendAnalysis:  return PromptLibrary.TrendAnalysis().systemPrompt
-        case .medicineInfo:   return PromptLibrary.TermExplanation().systemPrompt
-        case .healthPlan:     return PromptLibrary.DailyHealthPlan().systemPrompt
+        case .reportAnalysis: base = PromptLibrary.ReportAnalysis().systemPrompt
+        case .visitPrep:      base = PromptLibrary.VisitPreparation().systemPrompt
+        case .trendAnalysis:  base = PromptLibrary.TrendAnalysis().systemPrompt
+        case .medicineInfo:   base = PromptLibrary.MedicineInfo().systemPrompt
+        case .healthPlan:     base = PromptLibrary.DailyHealthPlan().systemPrompt
         }
+        return base + memberContextSection()
+    }
+
+    /// 将选中成员的健康档案附加到系统提示词，让 AI 在整个对话中都有个性化上下文
+    private func memberContextSection() -> String {
+        guard let member = selectedMember else { return "" }
+        var lines: [String] = ["\n\n---\n当前用户健康档案（仅供本次对话参考）："]
+        lines.append("姓名：\(member.name)\(member.age.map { "，\($0)岁" } ?? "")")
+        if member.bloodType != .unknown {
+            lines.append("血型：\(member.bloodType.rawValue)")
+        }
+        if !member.allergies.isEmpty {
+            lines.append("过敏原：\(member.allergies.joined(separator: "、"))")
+        }
+        let histories = member.medicalHistory.map(\.conditionName)
+        if !histories.isEmpty {
+            lines.append("既往病史：\(histories.joined(separator: "、"))")
+        }
+        let meds = member.medications.filter(\.isActive).map { m in
+            m.dosage.isEmpty ? m.name : "\(m.name) \(m.dosage)"
+        }
+        if !meds.isEmpty {
+            lines.append("当前用药：\(meds.joined(separator: "、"))")
+        }
+        if let latest = member.checkups.sorted(by: { $0.checkupDate > $1.checkupDate }).first,
+           !latest.summary.isEmpty {
+            lines.append("最近体检摘要：\(String(latest.summary.prefix(200)))")
+        }
+        lines.append("---")
+        return lines.joined(separator: "\n")
     }
 }
 

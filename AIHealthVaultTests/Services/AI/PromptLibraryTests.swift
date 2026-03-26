@@ -154,6 +154,76 @@ final class PromptLibraryTests: XCTestCase {
                       "趋势分析消息应包含附加数据")
     }
 
+    // MARK: - MedicineInfo
+
+    func testMedicineInfo_systemPrompt_isNotEmpty() {
+        let template = PromptLibrary.MedicineInfo()
+        XCTAssertFalse(template.systemPrompt.isEmpty, "MedicineInfo 系统提示词不应为空")
+    }
+
+    func testMedicineInfo_systemPrompt_mentionsDrugInteraction() {
+        let template = PromptLibrary.MedicineInfo()
+        XCTAssertTrue(
+            template.systemPrompt.contains("相互作用") || template.systemPrompt.contains("药物"),
+            "药物识别系统提示词应涵盖相互作用分析"
+        )
+    }
+
+    func testMedicineInfo_systemPrompt_mentionsMedicalDisclaimer() {
+        let template = PromptLibrary.MedicineInfo()
+        XCTAssertTrue(
+            template.systemPrompt.contains("医生") || template.systemPrompt.contains("药剂师"),
+            "药物识别系统提示词应包含医疗免责声明"
+        )
+    }
+
+    func testMedicineInfo_buildUserMessage_includesDrugQuery() {
+        let template = PromptLibrary.MedicineInfo()
+        let ctx = PromptContext(userQuery: "阿司匹林 100mg")
+        let msg = template.buildUserMessage(context: ctx)
+        XCTAssertTrue(msg.contains("阿司匹林"), "药物查询消息应包含药名")
+    }
+
+    func testMedicineInfo_buildUserMessage_includesCurrentMedications() {
+        let template = PromptLibrary.MedicineInfo()
+        let ctx = PromptContext(
+            currentMedications: ["华法林 5mg", "氨氯地平 5mg"],
+            userQuery: "布洛芬"
+        )
+        let msg = template.buildUserMessage(context: ctx)
+        XCTAssertTrue(msg.contains("华法林"), "药物查询消息应包含当前用药（用于相互作用检测）")
+        XCTAssertTrue(msg.contains("氨氯地平"), "药物查询消息应包含所有当前用药")
+    }
+
+    func testMedicineInfo_buildUserMessage_includesMedicalHistory() {
+        let template = PromptLibrary.MedicineInfo()
+        let ctx = PromptContext(
+            medicalHistory: ["肾功能不全"],
+            userQuery: "非甾体抗炎药"
+        )
+        let msg = template.buildUserMessage(context: ctx)
+        XCTAssertTrue(msg.contains("肾功能不全"), "药物查询消息应包含病史（影响药物禁忌）")
+    }
+
+    func testMedicineInfo_buildUserMessage_includesPatientInfo() {
+        let template = PromptLibrary.MedicineInfo()
+        let ctx = PromptContext(
+            memberName: "李四",
+            memberAge: 72,
+            userQuery: "二甲双胍"
+        )
+        let msg = template.buildUserMessage(context: ctx)
+        XCTAssertTrue(msg.contains("李四"), "药物查询消息应包含患者姓名")
+        XCTAssertTrue(msg.contains("72"), "药物查询消息应包含年龄（老年用药剂量不同）")
+    }
+
+    func testMedicineInfo_buildUserMessage_withMinimalContext_doesNotCrash() {
+        let template = PromptLibrary.MedicineInfo()
+        let msg = template.buildUserMessage(context: makeMinimalContext(query: "对乙酰氨基酚"))
+        XCTAssertFalse(msg.isEmpty, "最小上下文下药物查询消息不应为空")
+        XCTAssertTrue(msg.contains("对乙酰氨基酚"), "药名应出现在消息中")
+    }
+
     // MARK: - DailyHealthPlan
 
     func testDailyHealthPlan_systemPrompt_isNotEmpty() {
