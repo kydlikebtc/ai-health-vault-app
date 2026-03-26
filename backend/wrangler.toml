@@ -1,0 +1,42 @@
+name = "ai-health-vault-backend"
+main = "src/index.ts"
+compatibility_date = "2025-06-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Workers Paid plan — 30s CPU limit, unlimited I/O wait (AI streaming)
+# Free plan limits: 10ms CPU/request — NOT suitable for AI proxy
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ai-health-vault-db"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+migrations_dir = "migrations"
+
+[[durable_objects.bindings]]
+name = "RATE_LIMITER"
+class_name = "RateLimiter"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["RateLimiter"]
+
+# Secrets (set via `wrangler secret put`):
+#   ANTHROPIC_API_KEY      — Anthropic server-side key
+#   APPLE_ROOT_CERT_PEM    — Apple root CA PEM for JWS verification
+#   APPLE_BUNDLE_ID        — e.g. com.yourcompany.aihealthvault
+
+[vars]
+ENVIRONMENT = "production"
+# Premium monthly AI call limit
+PREMIUM_MONTHLY_LIMIT = "50"
+# Free tier limit (0 = no AI access)
+FREE_MONTHLY_LIMIT = "0"
+# Alert threshold: single user daily calls
+ALERT_DAILY_USER_LIMIT = "15"
+
+[dev]
+port = 8787
+
+# Local dev overrides
+[env.dev.vars]
+ENVIRONMENT = "development"
