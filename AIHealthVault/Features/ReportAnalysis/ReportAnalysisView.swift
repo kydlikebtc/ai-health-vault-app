@@ -220,10 +220,11 @@ struct ReportAnalysisView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(!AISettingsManager.shared.isAPIKeyConfigured)
+                .disabled(!SubscriptionManager.shared.hasAccess(to: .aiAnalysis))
+                .requiresPremium(.aiAnalysis)
 
-                if !AISettingsManager.shared.isAPIKeyConfigured {
-                    Text("请在「设置 → AI 功能」中配置 API Key")
+                if !SubscriptionManager.shared.hasAccess(to: .aiAnalysis) {
+                    Text("升级到 Premium 即可使用 AI 体检解读")
                         .font(.caption)
                         .foregroundStyle(.orange)
                 }

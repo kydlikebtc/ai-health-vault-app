@@ -12,11 +12,44 @@ struct SettingsView: View {
 
     // AI Settings
     @State private var showAISettings = false
+    @State private var showPaywall = false
+    @State private var subManager = SubscriptionManager.shared
 
     var body: some View {
         List {
             Section("账户") {
                 LabeledContent("家庭成员数", value: "\(members.count)")
+            }
+
+            // MARK: - Subscription Section
+            Section {
+                subscriptionStatusRow
+
+                if subManager.isPremiumActive {
+                    Button {
+                        if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
+                            UIApplication.shared.open(url)
+                        }
+                    } label: {
+                        HStack {
+                            Label("管理订阅", systemImage: "arrow.up.right")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .foregroundStyle(.primary)
+                } else {
+                    Button {
+                        showPaywall = true
+                    } label: {
+                        Label("升级到 Premium", systemImage: "crown.fill")
+                            .foregroundStyle(.blue)
+                    }
+                }
+            } header: {
+                Text("订阅")
             }
 
             // MARK: - HealthKit Section
@@ -125,6 +158,9 @@ struct SettingsView: View {
         .sheet(isPresented: $showAISettings) {
             AISettingsView()
         }
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
+        }
         .alert("HealthKit", isPresented: $showHealthKitAlert) {
             Button("确定", role: .cancel) {}
         } message: {
@@ -133,6 +169,44 @@ struct SettingsView: View {
     }
 
     // MARK: - Subviews
+
+    private var subscriptionStatusRow: some View {
+        HStack {
+            switch subManager.subscriptionStatus {
+            case .subscribed(let productID):
+                let isFamily = productID == SubscriptionProductID.familyAnnual.rawValue
+                Image(systemName: isFamily ? "person.3.fill" : "crown.fill")
+                    .foregroundStyle(.yellow)
+                    .frame(width: 24)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Premium 已激活")
+                    Text(isFamily ? "家庭年付" : (productID.contains("annual") ? "年付" : "月付"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            case .reverseTrial(let daysRemaining):
+                Image(systemName: "clock.fill")
+                    .foregroundStyle(.orange)
+                    .frame(width: 24)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("免费试用中")
+                    Text("剩余 \(daysRemaining) 天")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            case .free:
+                Image(systemName: "crown")
+                    .foregroundStyle(.secondary)
+                    .frame(width: 24)
+                Text("免费套餐")
+            case .unknown:
+                Image(systemName: "questionmark.circle")
+                    .foregroundStyle(.secondary)
+                    .frame(width: 24)
+                Text("加载中…")
+            }
+        }
+    }
 
     private var healthKitStatusRow: some View {
         HStack {

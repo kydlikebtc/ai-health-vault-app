@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import StoreKit
 import UserNotifications
 import os
 
@@ -10,6 +11,9 @@ struct AIHealthVaultApp: App {
     @StateObject private var authService = AuthenticationService()
     @StateObject private var healthKitService = HealthKitService()
     @StateObject private var notificationDelegate = AppNotificationDelegate()
+
+    /// 持有 Transaction.updates 监听任务，防止被提前释放
+    @State private var transactionListenerTask: Task<Void, Never>?
 
     /// SwiftData ModelContainer — 包含所有健康数据模型
     private let modelContainer: ModelContainer = {
@@ -38,6 +42,8 @@ struct AIHealthVaultApp: App {
     init() {
         // 注册「已服用」通知操作类别（必须在 App 启动时执行）
         MedicationNotificationService.shared.registerNotificationCategory()
+        // 记录首次安装日期，用于 Reverse Trial 计时
+        SubscriptionManager.shared.recordInstallDateIfNeeded()
     }
 
     var body: some Scene {
@@ -51,6 +57,10 @@ struct AIHealthVaultApp: App {
                         // 设置通知 delegate，使前台也能展示 banner
                         UNUserNotificationCenter.current().delegate = notificationDelegate
 
+                        // 启动 StoreKit 2 Transaction.updates 监听（App 生命周期内持续运行）
+                        transactionListenerTask = SubscriptionManager.shared.startTransactionListener()
+                        appLogger.info("Transaction.updates 监听已启动")
+
                         // App 启动时请求授权（若尚未授权）
                         if healthKitService.isAvailable &&
                            healthKitService.authorizationStatus == .notDetermined {
@@ -63,6 +73,10 @@ struct AIHealthVaultApp: App {
                                 appLogger.debug("HealthKit 后台通知：有新数据")
                             }
                         }
+                    }
+                    .onDisappear {
+                        transactionListenerTask?.cancel()
+                        transactionListenerTask = nil
                     }
             } else {
                 LockScreenView()

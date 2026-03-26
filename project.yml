@@ -22,6 +22,7 @@ targets:
       - path: AIHealthVault
     resources:
       - path: AIHealthVault/Resources
+      - path: AIHealthVault/AIHealthVault.storekit
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.aihealthvault.app
@@ -89,8 +90,10 @@ schemes:
         AIHealthVaultUITests: [test]
     run:
       config: Debug
+      storeKitConfiguration: AIHealthVault/AIHealthVault.storekit
     test:
       config: Debug
+      storeKitConfiguration: AIHealthVault/AIHealthVault.storekit
       targets:
         - name: AIHealthVaultTests
           parallelizable: true
