@@ -1,0 +1,101 @@
+{
+  "identifier" : "AIHealthVaultSubscriptions",
+  "nonConsumableProducts" : [],
+  "consumableProducts" : [],
+  "subscriptionGroups" : [
+    {
+      "id" : "20000001",
+      "localizations" : [
+        {
+          "description" : "Unlock AI analysis, PDF export, and all premium health features.",
+          "displayName" : "AI Health Vault Premium",
+          "locale" : "en_US"
+        }
+      ],
+      "name" : "AI Health Vault Premium",
+      "subscriptions" : [
+        {
+          "adHocOfferCodeRedemptions" : [],
+          "displayPrice" : "6.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "sub_premium_monthly_001",
+          "introductoryOffer" : {
+            "duration" : "P14D",
+            "offerMode" : "freeTrial",
+            "offerPeriodDuration" : "P1M"
+          },
+          "localizations" : [
+            {
+              "description" : "Full access to all AI-powered health features. Cancel anytime.",
+              "displayName" : "Premium Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.aihealthvault.premium.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Premium Monthly",
+          "subscriptionGroupID" : "20000001",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOfferCodeRedemptions" : [],
+          "displayPrice" : "49.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "sub_premium_annual_002",
+          "introductoryOffer" : {
+            "duration" : "P14D",
+            "offerMode" : "freeTrial",
+            "offerPeriodDuration" : "P1Y"
+          },
+          "localizations" : [
+            {
+              "description" : "Best value. Save $33.89 vs monthly. Full AI health features for a year.",
+              "displayName" : "Premium Annual",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.aihealthvault.premium.annual",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Premium Annual",
+          "subscriptionGroupID" : "20000001",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOfferCodeRedemptions" : [],
+          "displayPrice" : "79.99",
+          "familyShareable" : true,
+          "groupNumber" : 3,
+          "internalID" : "sub_family_annual_003",
+          "introductoryOffer" : {
+            "duration" : "P14D",
+            "offerMode" : "freeTrial",
+            "offerPeriodDuration" : "P1Y"
+          },
+          "localizations" : [
+            {
+              "description" : "Share Premium with up to 6 family members via Apple Family Sharing.",
+              "displayName" : "Family Annual",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.aihealthvault.family.annual",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Family Annual",
+          "subscriptionGroupID" : "20000001",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "settings" : {
+    "_billingGracePeriodEnabled" : true,
+    "_locale" : "en_US",
+    "_storefront" : "USA"
+  },
+  "version" : {
+    "major" : 2,
+    "minor" : 0
+  }
+}
